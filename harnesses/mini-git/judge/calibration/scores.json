@@ -1,0 +1,92 @@
+{
+  "_comment": "Ground truth calibration scores. Human expert scores with inter-rater agreement.",
+  "_format_version": "1.0",
+  "samples": [
+    {
+      "id": "sample_good",
+      "label": "High-quality implementation",
+      "human_scores": {
+        "plumbing_porcelain_separation": {
+          "score": 85,
+          "reasoning": "Clean separation across objects.py, index.py, refs.py, commands/. One minor leak in cmd_log.",
+          "rater_1": 88,
+          "rater_2": 82,
+          "agreement_delta": 6
+        },
+        "object_model_abstraction": {
+          "score": 80,
+          "reasoning": "Clean Blob/Tree/Commit dataclasses with serialize/deserialize. Tree sorting inline is a minor gap.",
+          "rater_1": 83,
+          "rater_2": 77,
+          "agreement_delta": 6
+        },
+        "naming_consistency": {
+          "score": 90,
+          "reasoning": "Highly consistent naming throughout. Minor: one test file uses 'hash' instead of 'sha'.",
+          "rater_1": 92,
+          "rater_2": 88,
+          "agreement_delta": 4
+        },
+        "test_quality": {
+          "score": 75,
+          "reasoning": "Good Tier 1-2 coverage with filesystem verification. Tier 3 gaps and no binary tests.",
+          "rater_1": 77,
+          "rater_2": 73,
+          "agreement_delta": 4
+        },
+        "scope_discipline": {
+          "score": 95,
+          "reasoning": "Builds exactly what was asked. --help flag is acceptable small addition.",
+          "rater_1": 95,
+          "rater_2": 95,
+          "agreement_delta": 0
+        }
+      },
+      "calibrated": true,
+      "notes": "All rater agreements within 10 points. Well-calibrated sample."
+    },
+    {
+      "id": "sample_bad",
+      "label": "Low-quality implementation",
+      "human_scores": {
+        "plumbing_porcelain_separation": {
+          "score": 10,
+          "reasoning": "Single 800-line file. No separation of any kind. SHA computation scattered with different formulas.",
+          "rater_1": 10,
+          "rater_2": 12,
+          "agreement_delta": 2
+        },
+        "object_model_abstraction": {
+          "score": 5,
+          "reasoning": "No object model. Tree is just a JSON dict. Multiple inconsistent SHA formulas.",
+          "rater_1": 5,
+          "rater_2": 8,
+          "agreement_delta": 3
+        },
+        "naming_consistency": {
+          "score": 30,
+          "reasoning": "Mixed do_/run_/git_ prefixes. Inconsistent sha/hash/commit_id naming.",
+          "rater_1": 30,
+          "rater_2": 28,
+          "agreement_delta": 2
+        },
+        "test_quality": {
+          "score": 20,
+          "reasoning": "Tests exist but only check exit codes. No filesystem verification. Happy-path only.",
+          "rater_1": 22,
+          "rater_2": 18,
+          "agreement_delta": 4
+        },
+        "scope_discipline": {
+          "score": 60,
+          "reasoning": "All requested commands present but added gc, config, and --porcelain. Moderate over-build.",
+          "rater_1": 58,
+          "rater_2": 62,
+          "agreement_delta": 4
+        }
+      },
+      "calibrated": true,
+      "notes": "All rater agreements within 10 points. Well-calibrated sample."
+    }
+  ]
+}
