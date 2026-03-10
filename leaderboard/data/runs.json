@@ -1,156 +1,290 @@
 [
   {
-    "id": "mini-git-claude-sonnet-4-6-20260310T140000Z",
+    "id": "mini-git-claude-opus-4-6-20260310T191557Z",
     "harness": "mini-git",
     "harness_version": "1.0.0",
-    "model": "claude-sonnet-4-6",
-    "agent_framework": "claude-code",
-    "agent_framework_version": "1.0.0",
-    "date": "2026-03-10T14:00:00Z",
-    "wall_clock_seconds": 2847,
-    "tokens_input": 87430,
-    "tokens_output": 24210,
-    "cost_usd": 4.23,
-    "total_score": 81.4,
+    "model": "claude-opus-4-6",
+    "agent_framework": "claude-api",
+    "date": "2026-03-10T19:20:40.621366+00:00",
+    "wall_clock_seconds": 282.961,
+    "tokens_input": 1822,
+    "tokens_output": 26492,
+    "cost_usd": 2.0142,
+    "total_score": 62.45,
     "scores": {
       "functional": {
-        "score": 88.5,
-        "weight": 0.30,
+        "score": 91.01,
+        "weight": 0.35,
         "detail": {
-          "total_passed": 62,
+          "total_passed": 66,
           "total_tests": 72,
           "tiers": {
-            "tier1": {"passed": 34, "total": 34, "score": 100.0},
-            "tier2": {"passed": 20, "total": 22, "score": 90.9},
-            "tier3": {"passed": 8, "total": 16, "score": 50.0}
+            "tier1": {
+              "passed": 33,
+              "total": 34,
+              "score": 97.06
+            },
+            "tier2": {
+              "passed": 22,
+              "total": 22,
+              "score": 100.0
+            },
+            "tier3": {
+              "passed": 11,
+              "total": 16,
+              "score": 68.75
+            }
           }
         },
-        "notes": "62/72 tests passing"
+        "notes": "66/72 tests passing"
       },
       "adversarial": {
-        "score": 74.2,
-        "weight": 0.15,
-        "detail": {"passed": 118, "total": 159, "survival_rate": 74.2},
-        "notes": "118/159 edge cases survived"
+        "score": 87.74,
+        "weight": 0.2,
+        "detail": {
+          "passed": 136,
+          "total": 155,
+          "survival_rate": 87.74
+        },
+        "notes": "136/155 edge cases survived"
       },
       "extension": {
-        "score": 75.0,
-        "weight": 0.10,
-        "detail": {"passed": 12, "total": 16, "phase": "static"},
-        "notes": "12/16 extension tests passing"
+        "score": 25.0,
+        "weight": 0.1,
+        "detail": {
+          "passed": 4,
+          "total": 16,
+          "phase": "static"
+        },
+        "notes": "4/16 extension tests passing"
       },
       "mutation": {
-        "score": 62.0,
-        "weight": 0.10,
-        "detail": {"killed": 93, "survived": 57, "total": 150, "method": "mutmut"},
-        "notes": "62% mutation kill rate"
+        "score": 0.0,
+        "weight": 0.0,
+        "detail": {
+          "killed": 0,
+          "survived": 0,
+          "total": 0,
+          "method": "unavailable"
+        },
+        "notes": "Neither mutmut nor cosmic-ray found. Install one to enable mutation scoring."
       },
       "performance": {
-        "score": 91.0,
+        "score": 13.16,
         "weight": 0.15,
         "detail": {
-          "log_10k_commits": {"p50": 0.82, "p95": 1.14, "target_p95": 2.0, "score": 100.0},
-          "add_100k_files": {"p50": 18.3, "p95": 22.1, "target_p95": 30.0, "score": 100.0},
-          "diff_1k_changed_files": {"p50": 0.31, "p95": 0.44, "target_p95": 1.0, "score": 100.0},
-          "merge_deep_diverge": {"p50": 3.8, "p95": 7.2, "target_p95": 5.0, "score": 64.0}
+          "log_10k_commits": {
+            "p50": 600,
+            "p95": 600,
+            "target_p95": 2.0,
+            "score": 0.0,
+            "skipped": true
+          },
+          "add_100k_files": {
+            "p50": 230.891,
+            "p95": 230.891,
+            "target_p95": 30.0,
+            "score": 0.0,
+            "skipped": false
+          },
+          "diff_1k_changed_files": {
+            "p50": 2.632,
+            "p95": 2.632,
+            "target_p95": 1.0,
+            "score": 59.21,
+            "skipped": false
+          },
+          "merge_deep_diverge": {
+            "p50": 183.954,
+            "p95": 183.954,
+            "target_p95": 5.0,
+            "score": 0.0,
+            "skipped": false
+          }
         },
         "notes": ""
       },
       "reliability": {
-        "score": 72.7,
-        "weight": 0.10,
-        "detail": {"passed": 8, "total": 11},
-        "notes": "8/11 reliability scenarios passing"
+        "score": 85.71,
+        "weight": 0.1,
+        "detail": {
+          "passed": 12,
+          "total": 14
+        },
+        "notes": "12/14 reliability scenarios passing"
       },
       "quality": {
-        "score": 83.0,
-        "weight": 0.10,
+        "score": 0.0,
+        "weight": 0.1,
         "detail": {
-          "plumbing_porcelain_separation": {"score": 88, "reasoning": "Clean separation between objects.py, index.py, and command handlers. Minor: one command directly accesses objects dir."},
-          "object_model_abstraction": {"score": 85, "reasoning": "Blob/Tree/Commit dataclasses with proper serialize/deserialize. SHA computation centralized."},
-          "naming_consistency": {"score": 90, "reasoning": "Highly consistent cmd_* and *_object naming throughout codebase."},
-          "test_quality": {"score": 78, "reasoning": "Good tier 1-2 coverage with filesystem verification. Tier 3 gaps."},
-          "scope_discipline": {"score": 74, "reasoning": "Implements all requested commands plus unrequested --verbose flag on several commands."}
+          "plumbing_porcelain_separation": {
+            "score": 0.0,
+            "reasoning": "[dry_run: LLM not called]"
+          },
+          "object_model_abstraction": {
+            "score": 0.0,
+            "reasoning": "[dry_run: LLM not called]"
+          },
+          "naming_consistency": {
+            "score": 0.0,
+            "reasoning": "[dry_run: LLM not called]"
+          },
+          "test_quality": {
+            "score": 0.0,
+            "reasoning": "[dry_run: LLM not called]"
+          },
+          "scope_discipline": {
+            "score": 0.0,
+            "reasoning": "[dry_run: LLM not called]"
+          }
         },
-        "notes": "LLM judge score (models: claude-sonnet-4-6...)"
+        "notes": "dry_run=True: no LLM calls made. Run with dry_run=False for real scoring."
       }
-    }
+    },
+    "_real": true
   },
   {
-    "id": "mini-git-gemini-pro-2-0-20260310T160000Z",
+    "id": "mini-git-gemini-2-5-flash-20260310T144538Z",
     "harness": "mini-git",
     "harness_version": "1.0.0",
-    "model": "gemini-2.0-pro",
-    "agent_framework": "gemini-code-assist",
-    "agent_framework_version": "2.0.0",
-    "date": "2026-03-10T16:00:00Z",
-    "wall_clock_seconds": 3241,
-    "tokens_input": 72100,
-    "tokens_output": 18900,
-    "cost_usd": 2.87,
-    "total_score": 61.7,
+    "model": "gemini-2.5-flash",
+    "agent_framework": "gemini-api",
+    "date": "2026-03-10T14:45:38Z",
+    "wall_clock_seconds": 296.6,
+    "tokens_input": 1731,
+    "tokens_output": 59394,
+    "cost_usd": 0.0179,
+    "total_score": 7.34,
     "scores": {
       "functional": {
-        "score": 70.2,
-        "weight": 0.30,
+        "score": 0.0,
+        "weight": 0.35,
         "detail": {
-          "total_passed": 48,
+          "total_passed": 0,
           "total_tests": 72,
           "tiers": {
-            "tier1": {"passed": 30, "total": 34, "score": 88.2},
-            "tier2": {"passed": 14, "total": 22, "score": 63.6},
-            "tier3": {"passed": 4, "total": 16, "score": 25.0}
+            "tier1": {
+              "passed": 0,
+              "total": 34,
+              "score": 0.0
+            },
+            "tier2": {
+              "passed": 0,
+              "total": 22,
+              "score": 0.0
+            },
+            "tier3": {
+              "passed": 0,
+              "total": 16,
+              "score": 0.0
+            }
           }
         },
-        "notes": "48/72 tests passing"
+        "notes": "0/72 tests passing"
       },
       "adversarial": {
-        "score": 52.8,
-        "weight": 0.15,
-        "detail": {"passed": 84, "total": 159, "survival_rate": 52.8},
-        "notes": "84/159 edge cases survived"
+        "score": 0.65,
+        "weight": 0.2,
+        "detail": {
+          "passed": 1,
+          "total": 155,
+          "survival_rate": 0.65
+        },
+        "notes": "1/155 edge cases survived"
       },
       "extension": {
-        "score": 43.8,
-        "weight": 0.10,
-        "detail": {"passed": 7, "total": 16, "phase": "static"},
-        "notes": "7/16 extension tests passing"
+        "score": 0.0,
+        "weight": 0.1,
+        "detail": {
+          "passed": 0,
+          "total": 16,
+          "phase": "static"
+        },
+        "notes": "0/16 extension tests passing"
       },
       "mutation": {
-        "score": 38.0,
-        "weight": 0.10,
-        "detail": {"killed": 57, "survived": 93, "total": 150, "method": "mutmut"},
-        "notes": "38% mutation kill rate — tests mostly check exit codes"
+        "score": 0.0,
+        "weight": 0.0,
+        "detail": {
+          "killed": 0,
+          "survived": 0,
+          "total": 0,
+          "method": "unavailable"
+        },
+        "notes": "Neither mutmut nor cosmic-ray found. Install one to enable mutation scoring."
       },
       "performance": {
-        "score": 78.0,
+        "score": 48.08,
         "weight": 0.15,
         "detail": {
-          "log_10k_commits": {"p50": 1.42, "p95": 2.87, "target_p95": 2.0, "score": 72.3},
-          "add_100k_files": {"p50": 24.1, "p95": 31.4, "target_p95": 30.0, "score": 94.6},
-          "diff_1k_changed_files": {"p50": 0.68, "p95": 1.12, "target_p95": 1.0, "score": 97.0},
-          "merge_deep_diverge": {"p50": 8.2, "p95": 14.7, "target_p95": 5.0, "score": 60.4}
+          "log_10k_commits": {
+            "p50": 600,
+            "p95": 600,
+            "target_p95": 2.0,
+            "score": 0.0,
+            "skipped": true
+          },
+          "add_100k_files": {
+            "p50": 17.805,
+            "p95": 17.805,
+            "target_p95": 30.0,
+            "score": 100.0,
+            "skipped": false
+          },
+          "diff_1k_changed_files": {
+            "p50": 1.346,
+            "p95": 1.346,
+            "target_p95": 1.0,
+            "score": 91.36,
+            "skipped": false
+          },
+          "merge_deep_diverge": {
+            "p50": 110.112,
+            "p95": 110.112,
+            "target_p95": 5.0,
+            "score": 0.0,
+            "skipped": false
+          }
         },
         "notes": ""
       },
       "reliability": {
-        "score": 54.5,
-        "weight": 0.10,
-        "detail": {"passed": 6, "total": 11},
-        "notes": "6/11 reliability scenarios — no locking on concurrent writes"
+        "score": 0.0,
+        "weight": 0.1,
+        "detail": {
+          "passed": 0,
+          "total": 14
+        },
+        "notes": "0/14 reliability scenarios passing"
       },
       "quality": {
-        "score": 52.0,
-        "weight": 0.10,
+        "score": 0.0,
+        "weight": 0.1,
         "detail": {
-          "plumbing_porcelain_separation": {"score": 35, "reasoning": "Single large file with mixed concerns. SHA computation in multiple places with different formulas."},
-          "object_model_abstraction": {"score": 42, "reasoning": "Partial abstraction — Blob class exists but Tree and Commit are dicts."},
-          "naming_consistency": {"score": 65, "reasoning": "Mostly consistent but mixes do_* and cmd_* prefixes."},
-          "test_quality": {"score": 55, "reasoning": "Tests present but mostly exit code checks. No object file verification."},
-          "scope_discipline": {"score": 62, "reasoning": "All commands implemented but added gc and config commands not in spec."}
+          "plumbing_porcelain_separation": {
+            "score": 0.0,
+            "reasoning": "[dry_run: LLM not called]"
+          },
+          "object_model_abstraction": {
+            "score": 0.0,
+            "reasoning": "[dry_run: LLM not called]"
+          },
+          "naming_consistency": {
+            "score": 0.0,
+            "reasoning": "[dry_run: LLM not called]"
+          },
+          "test_quality": {
+            "score": 0.0,
+            "reasoning": "[dry_run: LLM not called]"
+          },
+          "scope_discipline": {
+            "score": 0.0,
+            "reasoning": "[dry_run: LLM not called]"
+          }
         },
-        "notes": "LLM judge score (models: claude-sonnet-4-6...)"
+        "notes": "dry_run=True: no LLM calls made. Run with dry_run=False for real scoring."
       }
-    }
+    },
+    "_real": true
   }
 ]

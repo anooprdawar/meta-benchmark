@@ -1,3 +1,5 @@
 .worktrees/
 *.pyc
 __pycache__/
+submissions/
+.env

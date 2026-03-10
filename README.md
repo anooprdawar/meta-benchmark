@@ -18,7 +18,7 @@ This is the [CSS Zen Garden](https://csszengarden.com/) for AI coding agents.
 
 A standardized application harness defines *what to build* — a fixed canvas. Agents build against it. Their output is scored on dimensions that actually matter. Results are public and reproducible.
 
-> "This agent built mini-git with 94% feature completeness, p95 `git log` latency of 12ms on 10k commits, survived 87% of adversarial edge cases, and cost $4.23 in 47 minutes."
+> "claude-opus-4-6 built mini-git with 91% functional completeness, survived 87% of adversarial edge cases, 12/14 reliability scenarios, and cost $2.01 in 283 seconds."
 
 That's a precise, reproducible claim. You can verify it. You can compare it. You can beat it.
 
@@ -46,15 +46,28 @@ Seven dimensions, all automatable except code quality:
 
 | Dimension | Weight | How |
 |-----------|--------|-----|
-| Functional completeness | 30% | 72 behavioral tests (pytest, black-box) |
-| Adversarial survival | 15% | 159 edge cases — unicode filenames, binary files, corrupt objects, 100k files |
+| Functional completeness | 35%\* | 72 behavioral tests (pytest, black-box) |
+| Adversarial survival | 20%\* | 155 edge cases — unicode filenames, binary files, corrupt objects, 100k+ files |
 | Extension readiness | 10% | Second prompt: "now add remotes" — tests run again |
 | Mutation kill rate | 10% | Does the agent's own test suite actually verify its logic? |
-| Performance | 15% | p95 latency on `git log` (10k commits), `git add` (100k files), `git diff` (1k changes), deep merge |
+| Performance | 15% | p95 latency on `git log` (10k commits), `git add` (100k files), `git diff` (1k changes) |
 | Reliability | 10% | SIGKILL mid-commit, concurrent writes, disk-full, corrupt object store |
 | Code quality | 10% | Multi-model LLM judge, calibrated against human expert scores |
 
+\* *Mutation kill rate weight (10%) is redistributed equally to functional + adversarial when mutation tooling is unavailable.*
+
 **Output:** A structured JSON scorecard + human-readable report. All runs are public.
+
+## Real results
+
+These are actual API calls, actual generated code, actual test runs:
+
+| Model | Score | Functional | Adversarial | Reliability | Cost |
+|-------|-------|-----------|-------------|-------------|------|
+| claude-opus-4-6 | **62.5/100** | 66/72 (91%) | 136/155 (88%) | 12/14 (86%) | $2.01 |
+| gemini-2.5-flash | **7.3/100** | 0/72 (0%) | 1/155 (1%) | 0/14 (0%) | $0.02 |
+
+Gemini's 0% functional score isn't an infrastructure failure — its generated code has a struct packing bug that crashes on `git add`. The harness caught a real flaw.
 
 ## Architecture
 
@@ -66,10 +79,10 @@ meta-benchmark/
       prompt.md        ← The single seed prompt the agent receives
       rubric.md        ← Scoring dimensions and weights
       tests/
-        tier1/         ← init, add, commit, log, status
-        tier2/         ← branch, checkout, merge, diff
-        tier3/         ← merge conflicts, reset, stash
-        adversarial/   ← 159 edge cases
+        tier1/         ← init, add, commit, log, status  (34 tests)
+        tier2/         ← branch, checkout, merge, diff   (22 tests)
+        tier3/         ← merge conflicts, reset, stash   (16 tests)
+        adversarial/   ← 155 edge cases
         extension/     ← remote operations (second prompt)
         performance/   ← latency benchmarks
         reliability/   ← chaos scenarios
@@ -79,13 +92,15 @@ meta-benchmark/
   runner/
     cli.py             ← benchmark run / score / list-harnesses
     agents/
+      anthropic_api.py ← Direct Anthropic API agent
+      gemini_api.py    ← Direct Gemini API agent
       claude_code.py   ← Claude Code subprocess integration
       README.md        ← Manual submission format (for Cursor, Devin, etc.)
   scorer/
     behavioral.py      ← Runs tier 1-3 tests
     adversarial.py     ← Runs edge case battery
     extension.py       ← Runs extension tests
-    mutation.py        ← Mutation testing (mutmut)
+    mutation.py        ← Mutation testing (mutmut / cosmic-ray)
     performance.py     ← Latency benchmarks
     reliability.py     ← Chaos scenarios
     judge.py           ← Multi-model LLM judge
@@ -93,6 +108,8 @@ meta-benchmark/
   leaderboard/
     index.html         ← Static leaderboard site (no build step)
     data/runs.json     ← All public runs
+  run_benchmark.py     ← Run one or both models end-to-end
+  submissions/         ← All agent outputs + scorecards live here
 ```
 
 ## Quickstart
@@ -101,18 +118,40 @@ meta-benchmark/
 git clone <this-repo>
 cd meta-benchmark
 pip install -e .
+pip install pytest pytest-timeout pytest-json-report
 
-# See available harnesses
-benchmark list-harnesses
+# Explore what agents are asked to build
+cat harnesses/mini-git/prompt.md
 
-# Run mini-git against Claude
-benchmark run --harness mini-git --agent claude-code --model claude-sonnet-4-6
+# Run the test suite against the included Claude submission
+export MINI_GIT_CMD="python submissions/mini-git-claude-opus-4-6-live/workspace/mini_git.py"
+python -m pytest harnesses/mini-git/tests/tier1/ -v
 
-# Score the output
-benchmark score --submission submissions/mini-git-claude-sonnet-4-6-<timestamp>/ --harness mini-git
+# Run a full benchmark against a model (requires API key)
+export ANTHROPIC_API_KEY=sk-ant-...   # real key from console.anthropic.com
+python run_benchmark.py --models claude-opus-4-6 --dry-run
+
+# Score any submission
+python -m scorer.scorecard \
+  --submission submissions/mini-git-claude-opus-4-6-live \
+  --harness mini-git \
+  --dry-run
+
+# View the leaderboard
+cd leaderboard && python -m http.server 8080
+# open http://localhost:8080
 ```
 
-See [TESTING.md](TESTING.md) for a full walkthrough.
+See [TESTING.md](TESTING.md) for a step-by-step walkthrough from zero.
+
+## API keys
+
+| Model | Key var | Where to get it |
+|-------|---------|-----------------|
+| claude-opus-4-6, claude-sonnet-4-6 | `ANTHROPIC_API_KEY` | console.anthropic.com → API Keys |
+| gemini-2.5-flash, gemini-2.5-pro | `GEMINI_API_KEY` | aistudio.google.com → Get API key |
+
+> **Note:** The `ANTHROPIC_API_KEY` injected by Claude Code itself is a session token and will return 401 if used for direct API calls. You need a separate key from the Anthropic console.
 
 ## Anti-Goodhart measures
 
@@ -127,12 +166,11 @@ Benchmarks rot when they become training targets.
 Any agent, any framework. If you can produce code, you can submit.
 
 ```bash
-# Automated (Claude Code)
-benchmark run --harness mini-git --agent claude-code --model <your-model>
-benchmark score --submission submissions/<your-run>/ --harness mini-git
+# Via the benchmark runner (Claude or Gemini API)
+python run_benchmark.py --models claude-opus-4-6
 
 # Manual (Cursor, Devin, Copilot, raw API, etc.)
-# → See runner/agents/README.md
+# → See runner/agents/README.md for the submission format
 ```
 
 To add your run to the leaderboard, open a PR with your `metadata.json` and `scorecard.json`.
@@ -152,7 +190,13 @@ See [harnesses/mini-git/](harnesses/mini-git/) as the reference implementation.
 
 ## The leaderboard
 
-Open `leaderboard/index.html` in a browser (or `python -m http.server 8080` in the leaderboard dir). Sortable by any dimension. Filter by model, framework, harness version. Drill into any run for full scorecard detail.
+```bash
+cd leaderboard && python -m http.server 8080
+```
+
+Open `http://localhost:8080`. Sortable by any dimension. Filter by model, framework, harness version. Drill into any run for full scorecard detail.
+
+The leaderboard currently shows two real runs (claude-opus-4-6 and gemini-2.5-flash). Add yours.
 
 ---
 

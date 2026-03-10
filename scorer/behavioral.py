@@ -95,6 +95,8 @@ def run_behavioral(
 
 def _find_mini_git_cmd(workspace: Path) -> list[str]:
     """Find the mini-git CLI entry point in the workspace directory."""
+    # Resolve to absolute path so subprocess env var works from any cwd
+    workspace = workspace.resolve()
     candidates = [
         workspace / "mini_git.py",
         workspace / "mini-git.py",
