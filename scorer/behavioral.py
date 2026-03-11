@@ -42,6 +42,36 @@ class BehavioralResult:
     raw_json: dict[str, Any] = field(default_factory=dict)
 
 
+def _harness_cmd_var(harness_name: str) -> str:
+    """Derive env var name from harness name. 'mini-redis' -> 'MINI_REDIS_CMD'."""
+    return harness_name.upper().replace("-", "_") + "_CMD"
+
+
+def _find_cmd(workspace: Path, harness_name: str) -> list[str]:
+    """Find the CLI entry point for any harness in the workspace directory."""
+    workspace = workspace.resolve()
+    stem = harness_name.replace("-", "_")  # e.g. "mini_redis"
+    candidates = [
+        workspace / f"{stem}.py",
+        workspace / f"{harness_name}.py",
+        workspace / stem / "__main__.py",
+        workspace / "src" / f"{stem}.py",
+    ]
+    for candidate in candidates:
+        if candidate.exists():
+            return [sys.executable, str(candidate)]
+    for name in [stem, harness_name]:
+        binary = workspace / name
+        if binary.exists() and binary.stat().st_mode & 0o111:
+            return [str(binary)]
+    return [sys.executable, str(workspace / f"{stem}.py")]
+
+
+def _find_mini_git_cmd(workspace: Path) -> list[str]:
+    """Backwards-compat alias -- delegates to _find_cmd."""
+    return _find_cmd(workspace, "mini-git")
+
+
 def run_behavioral(
     submission_path: Path,
     harness_path: Path,
@@ -51,15 +81,15 @@ def run_behavioral(
     """
     Run tier 1-3 behavioral tests against the implementation in submission_path.
 
-    The implementation is located via MINI_GIT_CMD, which is set to point to
-    the agent's implementation in submission_path/workspace/.
+    The implementation is located via a harness-specific env var (e.g. MINI_GIT_CMD,
+    MINI_REDIS_CMD), derived from harness_path.name.
     """
     submission_path = Path(submission_path)
     harness_path = Path(harness_path)
     tests_root = harness_path / "tests"
-
-    # Discover the agent's mini-git entrypoint
-    mini_git_cmd = _find_mini_git_cmd(submission_path / "workspace")
+    harness_name = harness_path.name
+    cmd_var = _harness_cmd_var(harness_name)
+    impl_cmd = _find_cmd(submission_path / "workspace", harness_name)
 
     tier_results: dict[str, TierResult] = {}
 
@@ -71,7 +101,8 @@ def run_behavioral(
         result = _run_pytest_tier(
             tier_path=tier_path,
             tests_root=tests_root,
-            mini_git_cmd=mini_git_cmd,
+            impl_cmd=impl_cmd,
+            cmd_var=cmd_var,
             python=python,
             timeout=timeout,
         )
@@ -93,38 +124,19 @@ def run_behavioral(
     )
 
 
-def _find_mini_git_cmd(workspace: Path) -> list[str]:
-    """Find the mini-git CLI entry point in the workspace directory."""
-    # Resolve to absolute path so subprocess env var works from any cwd
-    workspace = workspace.resolve()
-    candidates = [
-        workspace / "mini_git.py",
-        workspace / "mini-git.py",
-        workspace / "mini_git" / "__main__.py",
-        workspace / "src" / "mini_git.py",
-    ]
-    for candidate in candidates:
-        if candidate.exists():
-            return [sys.executable, str(candidate)]
-
-    # Try executable binaries
-    for name in ["mini_git", "mini-git"]:
-        binary = workspace / name
-        if binary.exists() and binary.stat().st_mode & 0o111:
-            return [str(binary)]
-
-    # Fall back: return a sentinel that will cause tests to skip
-    return [sys.executable, str(workspace / "mini_git.py")]
-
-
 def _run_pytest_tier(
     tier_path: Path,
     tests_root: Path,
-    mini_git_cmd: list[str],
-    python: str,
-    timeout: int,
+    impl_cmd: list[str],
+    cmd_var: str = "MINI_GIT_CMD",
+    python: str = sys.executable,
+    timeout: int = 300,
+    # Keep old kwarg name as alias for callers that haven't updated yet
+    mini_git_cmd: list[str] | None = None,
 ) -> TierResult:
     """Run pytest for one tier and parse results."""
+    if mini_git_cmd is not None:
+        impl_cmd = mini_git_cmd  # backwards compat
     tier_name = tier_path.name
 
     cmd = [
@@ -138,17 +150,13 @@ def _run_pytest_tier(
         f"--rootdir={tests_root}",
     ]
 
-    env_extra = {"MINI_GIT_CMD": " ".join(mini_git_cmd)}
     import os
+    env_extra = {cmd_var: " ".join(impl_cmd)}
     env = {**os.environ, **env_extra}
 
     try:
         proc = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            timeout=timeout,
-            env=env,
+            cmd, capture_output=True, text=True, timeout=timeout, env=env,
         )
     except subprocess.TimeoutExpired:
         return TierResult(
