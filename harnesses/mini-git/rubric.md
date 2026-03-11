@@ -154,8 +154,12 @@ The harness runner executes an adversarial edge case battery against the agent's
 
 ### Scoring Formula
 
+The 20 cases shown above are illustrative examples of the adversarial categories tested. The full adversarial battery contains 155 public tests plus an additional private held-out set (run only for verified submissions). The formula uses the actual total for each run.
+
 ```
-adversarial_score = (passing_adversarial_tests / 20) * 100
+adversarial_score = (passing_adversarial_tests / total_adversarial_tests) * 100
+
+where total_adversarial_tests = 155 (public) + held_out_count (if verified run)
 ```
 
 ---
@@ -191,10 +195,12 @@ Write tests for the new functionality.
 | E-06 | Duplicate tag name is rejected with error |
 | E-07 | Agent's own tests for tags pass |
 
+The 7 cases shown above are a representative subset. The full extension suite has 16 tests.
+
 ### Scoring Formula
 
 ```
-extension_score = (passing_extension_tests / 7) * 100
+extension_score = (passing_extension_tests / 16) * 100
                 * (1 if agent also wrote tests, else 0.8)
 ```
 
