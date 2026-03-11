@@ -31,6 +31,7 @@
       "weight": 0.15
     },
     "status_large_repo": {
+      "_note": "No bench file — intentionally excluded from scoring. Scorer skips entries without 'file' field.",
       "description": "git status on repo with 10,000 files (1,000 modified)",
       "target_p95_seconds": 2.0,
       "fail_p95_seconds": 10.0,
