@@ -40,7 +40,6 @@ def run_performance(
     submission_path: Path,
     harness_path: Path,
     python: str = sys.executable,
-    n_samples: int = 3,
     timeout: int = 600,
 ) -> PerformanceResult:
     """Run performance benchmarks and compute weighted score."""

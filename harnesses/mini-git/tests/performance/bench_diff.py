@@ -44,7 +44,7 @@ def test_diff_1k_p95_within_target(repo_1k_changes):
     target = THRESHOLDS["target_p95_seconds"]
     fail = THRESHOLDS["fail_p95_seconds"]
 
-    print(f"\ndiff 1k files — p50={stats['p50']:.3f}s p95={stats['p95']:.3f}s")
+    print(f"\ndiff 1k files — p50={stats['p50']:.3f}s p95={stats['p95']:.3f}s p99={stats['p99']:.3f}s")
     assert stats["p95"] < fail, (
         f"p95 latency {stats['p95']:.2f}s exceeds hard fail threshold {fail}s"
     )
