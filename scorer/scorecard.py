@@ -114,6 +114,26 @@ class Scorecard:
         return "\n".join(lines)
 
 
+def _redistribute_na_weight(
+    weights: dict[str, float],
+    na_dim: str,
+    target_dims: list[str],
+) -> None:
+    """
+    Redistribute the weight of an N/A dimension proportionally to target_dims.
+    Modifies weights in-place. The total weight sum is preserved.
+    """
+    na_weight = weights[na_dim]
+    if na_weight == 0.0:
+        return
+    target_sum = sum(weights[d] for d in target_dims)
+    if target_sum == 0.0:
+        return
+    for d in target_dims:
+        weights[d] += na_weight * weights[d] / target_sum
+    weights[na_dim] = 0.0
+
+
 def build_scorecard(
     submission_path: Path,
     harness_path: Path,
@@ -143,11 +163,13 @@ def build_scorecard(
     # Handle N/A redistribution: if mutation has no tests, redistribute its weight
     weights = dict(DIMENSION_WEIGHTS)
     if mutation.total == 0:
-        # Redistribute mutation weight equally to functional + adversarial
-        extra = weights["mutation"] / 2
-        weights["functional"] += extra
-        weights["adversarial"] += extra
-        weights["mutation"] = 0.0
+        # Redistribute mutation weight proportionally to functional, adversarial, extension
+        # per rubric.md Section 8: "redistributed proportionally to D1, D2, D3"
+        _redistribute_na_weight(
+            weights,
+            na_dim="mutation",
+            target_dims=["functional", "adversarial", "extension"],
+        )
 
     scores = {
         "functional": {
