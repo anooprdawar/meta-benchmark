@@ -30,7 +30,7 @@ RUNS = [
 ]
 
 
-def run_one(agent_name: str, model: str, dry_run: bool) -> dict:
+def run_one(agent_name: str, model: str, dry_run: bool, run_extension_live: bool = True) -> dict:
     from runner.agents import get_agent
     from runner.environment import Environment
     from scorer.scorecard import score_submission
@@ -85,6 +85,7 @@ def run_one(agent_name: str, model: str, dry_run: bool) -> dict:
         output_path=submission_path / "scorecard.json",
         dry_run=dry_run,
         python=sys.executable,
+        agent=agent if run_extension_live else None,
     )
 
     return scorecard.to_dict()
@@ -94,7 +95,14 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--models", nargs="+", help="Override models to run")
     parser.add_argument("--dry-run", action="store_true", help="Skip LLM judge API calls")
+    parser.add_argument(
+        "--no-extension",
+        action="store_true",
+        help="Skip the live extension round (second-prompt flow); extension score will be 0",
+    )
     args = parser.parse_args()
+
+    run_extension_live = not args.no_extension
 
     runs_to_execute = RUNS
     if args.models:
@@ -108,7 +116,11 @@ def main():
     results = []
     for run in runs_to_execute:
         try:
-            scorecard = run_one(run["agent"], run["model"], dry_run=args.dry_run)
+            scorecard = run_one(
+                run["agent"], run["model"],
+                dry_run=args.dry_run,
+                run_extension_live=run_extension_live,
+            )
             results.append(scorecard)
             print(f"\n✓ {run['model']}: {scorecard['total_score']:.1f}/100")
         except Exception as e:

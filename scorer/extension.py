@@ -1,12 +1,11 @@
 """
-Extension scorer — tests whether the initial implementation included remote operations.
+Extension scorer — drives the second-prompt extension round.
 
-Runs the extension test suite (remote add, push, pull, fetch) against the submission.
-An agent that builds remote operations in its first response scores well here.
+When an agent is provided, sends the extension prompt to the agent, waits for it
+to update the workspace, then runs the extension test suite against the updated code.
 
-Note: The "second prompt → agent → re-test" flow described in the rubric is not yet
-implemented. This scorer measures whether the first response included extension features,
-which is a valid proxy for architectural extensibility.
+When no agent is provided (e.g. scoring a static submission), returns a zero score
+with phase="static" so the caller knows a live re-run is needed.
 """
 
 from __future__ import annotations
@@ -24,8 +23,9 @@ class ExtensionResult:
     failed: int
     total: int
     score: float  # 0-100
-    phase: str  # "static" or "live_agent"
+    phase: str  # "static", "live_agent", or "live_agent_failed"
     failures: list[dict[str, str]] = field(default_factory=list)
+    notes: str = ""
 
 
 def run_extension(
@@ -33,18 +33,20 @@ def run_extension(
     harness_path: Path,
     python: str = sys.executable,
     timeout: int = 300,
-    live_agent: bool = False,
+    agent=None,  # if provided, calls agent.extend() with extension prompt
 ) -> ExtensionResult:
     """
-    Run extension tests against the submission.
+    Run the extension test suite, optionally after driving a live agent round.
 
-    If live_agent=False (default), runs the extension test suite against
-    the current state of the submission. If the submission hasn't implemented
-    remote operations, all tests will fail (score = 0).
+    If agent is provided:
+      - Read harness_path/tests/extension/prompt.md
+      - Call agent.extend(submission_path/workspace, extension_prompt_text)
+      - Run the extension tests against the now-updated workspace
+      - Set phase = "live_agent"
 
-    If live_agent=True, the extension prompt would be fed to the agent,
-    the agent would update the workspace, then tests run. (Not implemented
-    in this version — requires runner integration.)
+    If agent is None:
+      - Return score=0, phase="static" without running any tests.
+        The extension dimension requires a live agent second-prompt round.
     """
     submission_path = Path(submission_path)
     harness_path = Path(harness_path)
@@ -54,15 +56,42 @@ def run_extension(
     if not extension_path.exists():
         return ExtensionResult(
             passed=0, failed=0, total=0, score=0.0, phase="static",
+            notes="No extension test directory found.",
         )
 
-    if live_agent:
-        raise NotImplementedError(
-            "Live agent extension testing requires runner integration. "
-            "Set live_agent=False to score the current submission state."
+    if agent is None:
+        return ExtensionResult(
+            passed=0,
+            failed=0,
+            total=16,
+            score=0.0,
+            phase="static",
+            notes=(
+                "Extension requires live agent (second-prompt flow). "
+                "Score is 0 until re-run with --extension-live."
+            ),
         )
 
-    mini_git_cmd = _find_mini_git_cmd(submission_path / "workspace")
+    # --- Live agent path ---
+    extension_prompt_path = extension_path / "prompt.md"
+    if not extension_prompt_path.exists():
+        return ExtensionResult(
+            passed=0, failed=0, total=16, score=0.0, phase="live_agent_failed",
+            notes=f"Extension prompt not found at {extension_prompt_path}",
+        )
+
+    extension_prompt_text = extension_prompt_path.read_text(encoding="utf-8")
+    workspace_path = submission_path / "workspace"
+
+    try:
+        agent.extend(workspace_path, extension_prompt_text)
+    except Exception as exc:
+        return ExtensionResult(
+            passed=0, failed=0, total=16, score=0.0, phase="live_agent_failed",
+            notes=f"agent.extend() raised: {exc}",
+        )
+
+    mini_git_cmd = _find_mini_git_cmd(workspace_path)
     tier_result = _run_pytest_tier(
         tier_path=extension_path,
         tests_root=tests_root,
@@ -71,26 +100,11 @@ def run_extension(
         timeout=timeout,
     )
 
-    # Agent-written tests bonus: if the submission has tests for remote operations,
-    # multiply score by 1.1 (capped at 100)
-    has_agent_remote_tests = _has_agent_remote_tests(submission_path / "workspace")
-    score = tier_result.score
-    if has_agent_remote_tests:
-        score = min(100.0, score * 1.1)
-
     return ExtensionResult(
         passed=tier_result.passed,
         failed=tier_result.failed,
         total=tier_result.total,
-        score=round(score, 2),
-        phase="static",
+        score=round(tier_result.score, 2),
+        phase="live_agent",
         failures=tier_result.failures,
     )
-
-
-def _has_agent_remote_tests(workspace: Path) -> bool:
-    """Check if the agent wrote tests for remote operations."""
-    for pattern in ["**/test_remote*.py", "**/test_push*.py", "**/test_pull*.py"]:
-        if any(workspace.glob(pattern)):
-            return True
-    return False

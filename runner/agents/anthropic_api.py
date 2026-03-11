@@ -51,6 +51,68 @@ class AnthropicAPIAgent:
         self.model = model
         self.harness_path = Path(harness_path)
 
+    def extend(self, workspace_path: Path, extension_prompt: str) -> AgentResult:
+        """Send a second API call with current code + extension prompt, overwrite files."""
+        try:
+            import anthropic
+        except ImportError:
+            raise RuntimeError("anthropic SDK not installed. Run: pip install anthropic")
+
+        workspace_path = Path(workspace_path)
+
+        api_key = os.environ.get("ANTHROPIC_API_KEY")
+        if not api_key:
+            raise RuntimeError("ANTHROPIC_API_KEY not set")
+
+        client = anthropic.Anthropic(api_key=api_key)
+
+        current_code = _read_workspace_code(workspace_path)
+        prompt = f"{extension_prompt}\n\n## Your current implementation\n\n{current_code}"
+
+        print(f"  Running extension round (second prompt)...")
+        print(f"  Calling {self.model} via Anthropic API (streaming)...")
+        start = time.monotonic()
+
+        raw_text = ""
+        tokens_input = 0
+        tokens_output = 0
+        with client.messages.stream(
+            model=self.model,
+            max_tokens=32768,
+            system=SYSTEM_PROMPT,
+            messages=[{"role": "user", "content": prompt}],
+        ) as stream:
+            for text in stream.text_stream:
+                raw_text += text
+            final = stream.get_final_message()
+            tokens_input = final.usage.input_tokens
+            tokens_output = final.usage.output_tokens
+
+        elapsed = time.monotonic() - start
+        print(f"  Extension API call complete in {elapsed:.1f}s")
+
+        costs = _MODEL_COSTS.get(self.model, _DEFAULT_COST)
+        cost = (tokens_input / 1_000_000 * costs["input"]
+                + tokens_output / 1_000_000 * costs["output"])
+
+        files_written = _parse_and_write_files(raw_text, workspace_path)
+        print(f"  Files written (extension): {len(files_written)}")
+        for f in files_written[:10]:
+            print(f"    {f}")
+        if len(files_written) > 10:
+            print(f"    ... and {len(files_written) - 10} more")
+
+        (workspace_path / "_raw_extension_response.txt").write_text(raw_text, encoding="utf-8")
+
+        return AgentResult(
+            output=raw_text,
+            exit_code=0 if files_written else 1,
+            tokens_input=tokens_input,
+            tokens_output=tokens_output,
+            cost_estimate_usd=round(cost, 4),
+            raw_response=raw_text,
+        )
+
     def run(self, workspace_path: Path) -> AgentResult:
         try:
             import anthropic
@@ -168,3 +230,37 @@ def _write_file(workspace: Path, rel_path: str, content: str) -> None:
         return
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(content, encoding="utf-8")
+
+
+def _read_workspace_code(workspace: Path, max_chars: int = 40_000) -> str:
+    """
+    Read source files from workspace (non-test .py files, excluding mutants/).
+    Returns content formatted as === FILE: ... === blocks.
+    """
+    workspace = Path(workspace)
+    parts: list[str] = []
+    total_chars = 0
+
+    for path in sorted(workspace.rglob("*.py")):
+        # Skip test files, mutant directories, and hidden/internal files
+        rel = path.relative_to(workspace)
+        parts_rel = rel.parts
+        if any(p == "mutants" for p in parts_rel):
+            continue
+        if path.name.startswith("test_") or path.name.endswith("_test.py"):
+            continue
+        if path.name.startswith("_"):
+            continue
+
+        try:
+            content = path.read_text(encoding="utf-8")
+        except OSError:
+            continue
+
+        block = f"=== FILE: {rel.as_posix()} ===\n{content}\n=== END FILE ==="
+        if total_chars + len(block) > max_chars:
+            break
+        parts.append(block)
+        total_chars += len(block)
+
+    return "\n\n".join(parts)

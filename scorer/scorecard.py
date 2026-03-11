@@ -268,6 +268,7 @@ def score_submission(
     output_path: Path | None = None,
     dry_run: bool = False,
     python: str | None = None,
+    agent=None,
 ) -> Scorecard:
     """
     Full scoring pipeline: run all scorers and produce a Scorecard.
@@ -278,6 +279,7 @@ def score_submission(
         output_path: If provided, write scorecard JSON here
         dry_run: Skip LLM judge calls
         python: Python interpreter path (defaults to sys.executable)
+        agent: If provided, drives the live extension round (second-prompt flow)
     """
     import sys
     python = python or sys.executable
@@ -300,9 +302,9 @@ def score_submission(
 
     print("Running extension tests...")
     from scorer.extension import run_extension
-    extension = run_extension(submission_path, harness_path, python=python)
+    extension = run_extension(submission_path, harness_path, python=python, agent=agent)
     print(f"  Extension: {extension.score:.1f}/100 "
-          f"({extension.passed}/{extension.total})")
+          f"({extension.passed}/{extension.total}) [{extension.phase}]")
 
     print("Running mutation testing...")
     from scorer.mutation import run_mutation

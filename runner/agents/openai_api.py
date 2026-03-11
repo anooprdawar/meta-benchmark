@@ -11,7 +11,7 @@ import os
 import time
 from pathlib import Path
 
-from runner.agents.anthropic_api import AgentResult, _parse_and_write_files
+from runner.agents.anthropic_api import AgentResult, _parse_and_write_files, _read_workspace_code
 
 # Cost per million tokens (USD) by model
 _MODEL_COSTS = {
@@ -59,6 +59,86 @@ class OpenAIAPIAgent:
     def __init__(self, model: str, harness_path: Path) -> None:
         self.model = model
         self.harness_path = Path(harness_path)
+
+    def extend(self, workspace_path: Path, extension_prompt: str) -> AgentResult:
+        """Send a second API call with current code + extension prompt, overwrite files."""
+        try:
+            import openai
+        except ImportError:
+            raise RuntimeError("openai SDK not installed. Run: pip install openai")
+
+        workspace_path = Path(workspace_path)
+
+        api_key = os.environ.get("OPENAI_META_BENCHMARK_KEY") or os.environ.get("OPENAI_API_KEY")
+        if not api_key:
+            raise RuntimeError("OPENAI_META_BENCHMARK_KEY not set")
+
+        client = openai.OpenAI(api_key=api_key)
+
+        current_code = _read_workspace_code(workspace_path)
+        user_prompt = f"{extension_prompt}\n\n## Your current implementation\n\n{current_code}"
+
+        print(f"  Running extension round (second prompt)...")
+        print(f"  Calling {self.model} via OpenAI API (streaming)...")
+        start = time.monotonic()
+
+        raw_text = ""
+        tokens_input = 0
+        tokens_output = 0
+
+        if "codex" in self.model.lower():
+            response = client.responses.create(
+                model=self.model,
+                instructions=SYSTEM_PROMPT,
+                input=user_prompt,
+                max_output_tokens=32768,
+            )
+            raw_text = response.output_text
+            if hasattr(response, "usage") and response.usage:
+                tokens_input = response.usage.input_tokens
+                tokens_output = response.usage.output_tokens
+        else:
+            stream = client.chat.completions.create(
+                model=self.model,
+                max_completion_tokens=32768,
+                stream=True,
+                stream_options={"include_usage": True},
+                messages=[
+                    {"role": "system", "content": SYSTEM_PROMPT},
+                    {"role": "user", "content": user_prompt},
+                ],
+            )
+            for chunk in stream:
+                if chunk.choices and chunk.choices[0].delta.content:
+                    raw_text += chunk.choices[0].delta.content
+                if chunk.usage:
+                    tokens_input = chunk.usage.prompt_tokens
+                    tokens_output = chunk.usage.completion_tokens
+
+        elapsed = time.monotonic() - start
+        print(f"  Extension API call complete in {elapsed:.1f}s")
+
+        costs = _MODEL_COSTS.get(self.model, _DEFAULT_COST)
+        cost = (tokens_input / 1_000_000 * costs["input"]
+                + tokens_output / 1_000_000 * costs["output"])
+
+        files_written = _parse_and_write_files(raw_text, workspace_path)
+        print(f"  Files written (extension): {len(files_written)}")
+        for f in files_written[:10]:
+            print(f"    {f}")
+        if len(files_written) > 10:
+            print(f"    ... and {len(files_written) - 10} more")
+
+        (workspace_path / "_raw_extension_response.txt").write_text(raw_text, encoding="utf-8")
+
+        return AgentResult(
+            output=raw_text,
+            exit_code=0 if files_written else 1,
+            tokens_input=tokens_input,
+            tokens_output=tokens_output,
+            cost_estimate_usd=round(cost, 4),
+            raw_response=raw_text,
+        )
 
     def run(self, workspace_path: Path) -> AgentResult:
         try:
