@@ -21,6 +21,7 @@ def test_extract_ignores_elapsed_only_format():
     p50, p95, p99 = _extract_timing(output, fallback=99.0)
     assert p50 == 99.0
     assert p95 == 99.0
+    assert p99 == 99.0
 
 
 def test_extract_fallback_when_no_match():
