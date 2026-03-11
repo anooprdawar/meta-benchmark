@@ -1,0 +1,27 @@
+{
+  "_comment": "Performance thresholds for mini-redis. Single CLI invocation on pre-populated store.",
+  "_scoring": "Score = 100 if p95 <= target_p95. Score = 0 if p95 >= fail_p95. Linear interpolation between.",
+  "benchmarks": {
+    "get_10k_keys": {
+      "file": "bench_get_10k.py",
+      "description": "GET a key from a store containing 10,000 keys",
+      "target_p95_seconds": 1.0,
+      "fail_p95_seconds": 5.0,
+      "weight": 0.40
+    },
+    "lrange_10k_list": {
+      "file": "bench_lrange_10k.py",
+      "description": "LRANGE 0 -1 on a list with 10,000 elements",
+      "target_p95_seconds": 2.0,
+      "fail_p95_seconds": 10.0,
+      "weight": 0.35
+    },
+    "hgetall_1k_fields": {
+      "file": "bench_hgetall_1k.py",
+      "description": "HGETALL on a hash with 1,000 fields",
+      "target_p95_seconds": 1.0,
+      "fail_p95_seconds": 5.0,
+      "weight": 0.25
+    }
+  }
+}
