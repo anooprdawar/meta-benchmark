@@ -165,7 +165,8 @@ def _load_calibration(calibration_path: Path) -> dict[str, Any]:
 def _build_code_context(workspace: Path) -> str:
     """
     Build a code context string from the agent's implementation.
-    Includes key source files (up to ~10,000 tokens).
+    Includes key source files (up to ~10,000 tokens), plus test files
+    so the judge can score test_quality.
     """
     if not workspace.exists():
         return "[workspace not found]"
@@ -174,22 +175,51 @@ def _build_code_context(workspace: Path) -> str:
     total_chars = 0
     max_chars = 40_000  # ~10k tokens
 
-    # Prioritize: main file, then other source files, then tests
-    py_files = sorted(
-        [p for p in workspace.rglob("*.py") if "test" not in p.name.lower()],
+    # Exclude mutation artifacts directory entirely
+    def _is_source(p: Path) -> bool:
+        return "mutants" not in p.parts and "test" not in p.name.lower()
+
+    def _is_test(p: Path) -> bool:
+        return "mutants" not in p.parts and "test" in p.name.lower()
+
+    # Source files first (sorted by size descending — largest is usually the main impl)
+    src_files = sorted(
+        [p for p in workspace.rglob("*.py") if _is_source(p)],
+        key=lambda p: p.stat().st_size,
+        reverse=True,
+    )
+    # Test files second
+    test_files = sorted(
+        [p for p in workspace.rglob("*.py") if _is_test(p)],
         key=lambda p: p.stat().st_size,
         reverse=True,
     )
 
-    for f in py_files[:20]:
-        if total_chars >= max_chars:
+    src_budget = int(max_chars * 0.70)  # 28k chars for source
+    test_budget = max_chars - src_budget  # 12k chars for tests
+
+    for f in src_files[:10]:
+        if total_chars >= src_budget:
             break
         try:
             content = f.read_text(encoding="utf-8", errors="replace")
             relative = f.relative_to(workspace)
-            excerpt = content[:max_chars - total_chars]
+            excerpt = content[:src_budget - total_chars]
             parts.append(f"=== {relative} ===\n{excerpt}")
             total_chars += len(excerpt)
+        except OSError:
+            continue
+
+    test_chars = 0
+    for f in test_files[:10]:
+        if test_chars >= test_budget:
+            break
+        try:
+            content = f.read_text(encoding="utf-8", errors="replace")
+            relative = f.relative_to(workspace)
+            excerpt = content[:test_budget - test_chars]
+            parts.append(f"=== {relative} (tests) ===\n{excerpt}")
+            test_chars += len(excerpt)
         except OSError:
             continue
 
