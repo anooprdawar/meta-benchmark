@@ -39,8 +39,8 @@ def test_double_quote_in_value(db):
     run_redis(["SET", "k", 'say "hello"'], data_path=db)
     r = run_redis(["GET", "k"], data_path=db)
     assert_success(r)
-    assert r.returncode == 0
-    # Output must be quoted and escaped
+    # Intentionally flexible: only checks the output is wrapped in quotes.
+    # The spec does not mandate a specific escaping strategy for inner double-quotes.
     out = r.stdout.strip()
     assert out.startswith('"') and out.endswith('"')
 

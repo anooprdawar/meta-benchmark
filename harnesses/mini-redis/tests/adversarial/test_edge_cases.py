@@ -72,4 +72,5 @@ def test_hgetall_single_field(db):
     run_redis(["HSET", "h", "onlyfield", "onlyvalue"], data_path=db)
     r = run_redis(["HGETALL", "h"], data_path=db)
     lines = r.stdout.strip().splitlines()
+    # HGETALL outputs unquoted alternating field/value lines (unlike LRANGE/SMEMBERS)
     assert lines == ["onlyfield", "onlyvalue"]

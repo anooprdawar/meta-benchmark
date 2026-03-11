@@ -62,7 +62,7 @@ def test_expire_zero_seconds_exits_1(db):
     run_redis(["SET", "k", "v"], data_path=db)
     r = run_redis(["EXPIRE", "k", "0"], data_path=db)
     assert r.returncode == 1
-    assert r.stdout.strip() == ""
+    assert r.stdout.strip() == ""  # spec: error output goes to stderr, not stdout
 
 
 def test_expire_negative_seconds_exits_1(db):
@@ -73,7 +73,6 @@ def test_expire_negative_seconds_exits_1(db):
 
 def test_expired_key_returns_nil_on_get(db):
     """Key expired in a previous invocation returns (nil) in next invocation."""
-    import time
     run_redis(["SET", "k", "v"], data_path=db)
     run_redis(["EXPIRE", "k", "1"], data_path=db)
     time.sleep(1.1)
