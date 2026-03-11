@@ -80,10 +80,26 @@ Running reliability tests...
 Running LLM judge...
   Quality: 0.0/100 (dry_run=True)
 
-Total score: 67.2/100
+Total score: 76.1/100
 ```
 
-Remove `--dry-run` to run the LLM judge too. With the judge, this submission scores **73.6/100** (quality: 72.8/100).
+> **Note on N/A weight redistribution:** When a dimension can't be scored (e.g. mutation testing requires the agent to have produced test files), its weight is redistributed proportionally to functional, adversarial, and extension. This keeps scores on a comparable 0–100 scale across runs where different dimensions apply.
+
+Remove `--dry-run` to run the LLM judge too (quality: ~72.8/100). Dry-run entries show `—` in the leaderboard Quality column — distinguishable from a genuine 0 quality score.
+
+---
+
+## Step 3b: Verify scorer integrity
+
+The `tests/` directory at the project root contains unit tests for the scoring infrastructure itself — not the harness tests. Run them to confirm the scorer is working correctly:
+
+```bash
+python -m pytest tests/ -v
+```
+
+Expected: 6 tests pass covering:
+- `_extract_timing`: verifies the performance benchmark output parser handles all four print formats
+- `_redistribute_na_weight`: verifies N/A dimension weight redistribution is proportional (not equal-split) and always sums to 1.0
 
 ---
 
@@ -236,7 +252,7 @@ export MINI_GIT_CMD="python /path/to/mini_git.py"
 # Adversarial: unicode filenames, binary files, corrupt objects, 100k+ files
 python -m pytest harnesses/mini-git/tests/adversarial/ -v --tb=short
 
-# Extension: remote add/push/pull/fetch
+# Extension: second-prompt tag support (tag, tag -d, log annotations)
 python -m pytest harnesses/mini-git/tests/extension/ -v --tb=short
 
 # Reliability: mid-commit kill, concurrent writes, disk full, corrupt store
@@ -323,4 +339,4 @@ cd leaderboard && python -m http.server 8080
 | 30–55 | Partial. Tier 1 works, Tier 2 rough, Tier 3 gaps. | — |
 | < 30 | Broken. Core implementation bug stops most tests. | **gemini-2.5-flash: 7.3** |
 
-All capable models cluster 76–80. Differentiation comes from performance benchmarks (OpenAI/Gemini: 100, Claude: 35), mutation kill rate (Claude: 100%, others vary), and code quality judge scores (Claude: 72.8, gpt-5.4: 60.5, others lower). Extension is a real second-prompt round — all models implement remote add/list/remove but none yet implement fetch/push/pull.
+All capable models cluster 76–80. Differentiation comes from performance benchmarks (OpenAI/Gemini: 100, Claude: 35), mutation kill rate (Claude: 100%, others vary), and code quality judge scores (Claude: 72.8, gpt-5.4: 60.5, others lower). Extension is a real second-prompt round — agents are given 15 minutes to add lightweight tag support. All current models pass only 4 of 16 extension tests.

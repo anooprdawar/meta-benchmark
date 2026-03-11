@@ -48,11 +48,13 @@ Seven dimensions, all automated:
 |-----------|--------|-----|
 | Functional completeness | 30% | 72 behavioral tests across 3 tiers (pytest, black-box) |
 | Adversarial survival | 15% | 155 public + private held-out edge cases |
-| Extension readiness | 10% | Did the implementation include remote operations (push/pull/fetch)? |
+| Extension readiness | 10% | Second-prompt round: agent given 15 min to add lightweight tag support (`tag`, `tag -d`, `tag` listing, log annotations). 16 tests. |
 | Mutation kill rate | 10% | Does the agent's own test suite catch code mutations? (mutmut) |
 | Performance | 15% | p95 latency: `git log` on 10k commits, `git add` on 100k files, `git diff` on 1k changes |
 | Reliability | 10% | SIGKILL mid-commit, concurrent writes, disk-full, corrupt object store |
 | Code quality | 10% | Multi-model LLM judge, calibrated against human expert scores |
+
+When a dimension is not applicable (e.g. the agent produced no test files, so mutation can't run), its weight is redistributed proportionally across functional, adversarial, and extension — keeping scores on a consistent 0–100 scale regardless of which dimensions apply.
 
 **Output:** A structured JSON scorecard + human-readable report. All runs are public.
 
@@ -70,7 +72,7 @@ All scores are from actual API calls, actual generated code, actual test runs �
 
 ✓ = scored with private held-out tests included. Extension = second-prompt delta test (agent given 15 min to add remote operations after initial submission).
 
-What the data shows: All capable models pass the same functional and adversarial tests — the differentiation is performance, code quality, and mutation kill rate. OpenAI and Gemini are dramatically faster (100/100 performance vs Claude's 35.4). Claude writes the highest quality code (72.8 judge score) and comprehensively tests what it builds (100% mutation kill rate). All models implement `remote add/list/remove` when asked but none yet implement `fetch/push/pull`. Gemini 2.5 Flash's 0% functional score is a real bug in its generated code.
+What the data shows: All capable models pass the same functional and adversarial tests — the differentiation is performance, code quality, and mutation kill rate. OpenAI and Gemini are dramatically faster (100/100 performance vs Claude's 35.4). Claude writes the highest quality code (72.8 judge score) and comprehensively tests what it builds (100% mutation kill rate). All models pass only 4/16 extension tests — they add tags partially but miss log annotations and edge cases. Gemini 2.5 Flash's 0% functional score is a real bug in its generated code.
 
 ## Architecture
 
@@ -218,7 +220,7 @@ cd leaderboard && python -m http.server 8080
 
 Sortable by any dimension. Filter by model, framework, and harness version. Drill into any run for the full scorecard — tier breakdown, adversarial detail, performance latency, judge dimension scores.
 
-Currently showing two real runs. Add yours.
+Currently showing five real runs. Runs scored without the LLM judge (using `--dry-run`) display `—` in the Quality column rather than 0 — so a missing quality score is always distinguishable from a genuinely bad one. Add yours.
 
 ---
 
