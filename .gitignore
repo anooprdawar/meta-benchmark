@@ -5,3 +5,4 @@ submissions/
 .env
 harnesses/*/tests/held-out/
 harnesses/mini-redis/tests/held-out/test_*.py
+harnesses/mini-sqlite/tests/held-out/test_*.py
