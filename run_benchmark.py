@@ -3,10 +3,16 @@
 Run a full benchmark pass against one or more models and produce real scorecards.
 
 Usage:
-    python run_benchmark.py                        # both claude-opus-4-6 and gemini-2.5-pro
+    python run_benchmark.py                           # all default models
     python run_benchmark.py --models claude-opus-4-6
-    python run_benchmark.py --models gemini-2.5-pro
-    python run_benchmark.py --dry-run              # skip LLM judge API calls in scoring
+    python run_benchmark.py --models gpt-5.4 gpt-5.3-codex gemini-2.5-pro
+    python run_benchmark.py --dry-run                 # skip LLM judge API calls in scoring
+    python run_benchmark.py --no-extension            # skip live extension round
+
+Required environment variables (depending on models run):
+    ANTHROPIC_API_KEY          Claude models
+    GEMINI_API_KEY             Gemini models
+    OPENAI_META_BENCHMARK_KEY  OpenAI models
 """
 
 from __future__ import annotations
@@ -26,7 +32,9 @@ HARNESS_PATH = PROJECT_ROOT / "harnesses" / HARNESS
 
 RUNS = [
     {"agent": "claude-api",  "model": "claude-opus-4-6"},
-    {"agent": "gemini-api",  "model": "gemini-2.5-flash"},
+    {"agent": "gemini-api",  "model": "gemini-2.5-pro"},
+    {"agent": "openai-api",  "model": "gpt-5.4"},
+    {"agent": "openai-api",  "model": "gpt-5.3-codex"},
 ]
 
 
