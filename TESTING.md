@@ -10,14 +10,20 @@ Everything you need to try the benchmark, step by step.
 git clone https://github.com/anoopdawar/meta-benchmark
 cd meta-benchmark
 
-# Core install (scoring infrastructure + pytest)
-pip install -e .
+# Install everything (the benchmark, test tools, and all model SDKs)
+pip install -e ".[all]"
+```
 
-# Add the agents you need
-pip install -e ".[anthropic]"    # for Claude models
-pip install -e ".[openai]"      # for GPT models
-pip install -e ".[gemini]"      # for Gemini models
-pip install -e ".[all]"         # everything including mutmut
+This installs:
+- The `benchmark` CLI tool
+- pytest + plugins (for running the test suites)
+- The Anthropic, OpenAI, and Google Gemini Python SDKs (for calling model APIs)
+- mutmut (for mutation testing)
+
+If you only want to score existing submissions and never call a model API, the base install is enough:
+
+```bash
+pip install -e .
 ```
 
 Check it works:
@@ -32,7 +38,28 @@ python -m runner.cli list-harnesses
 
 ---
 
-## Step 1: Read what agents receive
+## Step 1: Set your API keys
+
+You need keys for whichever model providers you want to benchmark. Set them as environment variables:
+
+```bash
+# Anthropic (for Claude models) — get one at console.anthropic.com
+export ANTHROPIC_META_BENCHMARK_KEY=sk-ant-...
+
+# OpenAI (for GPT models) — get one at platform.openai.com
+export OPENAI_META_BENCHMARK_KEY=sk-proj-...
+
+# Google (for Gemini models) — get one at aistudio.google.com
+export GEMINI_META_BENCHMARK_KEY=AIza...
+```
+
+You don't need all three. If you only have an Anthropic key, you can only benchmark Claude models — that's fine.
+
+> **Note:** If you're running this inside Claude Code, the `ANTHROPIC_API_KEY` that's already set is a session token — it won't work for direct API calls. You need a separate key from the Anthropic console.
+
+---
+
+## Step 2: Read what agents receive
 
 Each harness has a single prompt file — the *only* thing the agent sees. No hints about tests, scoring, or dimensions.
 
@@ -44,22 +71,22 @@ cat harnesses/mini-sqlite/prompt.md
 
 ---
 
-## Step 2: Run a benchmark
+## Step 3: Run a benchmark
 
-Pick a harness, pick a model. The CLI creates a submission directory, calls the API, and writes the generated code.
+Pick a harness, pick a model. The CLI calls the model API, gets back generated code, and saves it.
 
 ```bash
-# Anthropic
+# Have Claude build a Redis implementation from scratch
 python -m runner.cli run --harness mini-redis --agent claude-api --model claude-opus-4-6
 
-# Google
-python -m runner.cli run --harness mini-redis --agent gemini-api --model gemini-2.5-pro
-
-# OpenAI
+# Have GPT do the same
 python -m runner.cli run --harness mini-redis --agent openai-api --model gpt-5.4
+
+# Have Gemini do the same
+python -m runner.cli run --harness mini-redis --agent gemini-api --model gemini-2.5-pro
 ```
 
-Output:
+This takes 1-3 minutes per model. Output looks like:
 
 ```
 Running harness 'mini-redis' with agent 'claude-api' (model: claude-opus-4-6)
@@ -76,9 +103,13 @@ Tokens: 1,024 in / 11,832 out
 Est. cost: $0.93
 ```
 
+The generated code is in `submissions/<run>/workspace/`.
+
 ---
 
-## Step 3: Score the submission
+## Step 4: Score the submission
+
+Run the full test suite against the generated code:
 
 ```bash
 python -m runner.cli score \
@@ -111,75 +142,64 @@ Total score: 82.5/100
 
 The scorecard is written to `submissions/<run>/scorecard.json`.
 
+Scoring calls three LLM judges (one per provider: Claude, GPT, Gemini) to evaluate code quality. This costs a few cents per run. If you don't have all three API keys, the judge uses whichever providers are available.
+
 > **Weight redistribution:** When a dimension can't be scored (e.g. mutation requires test files the agent didn't write), its weight is redistributed proportionally across functional, adversarial, and extension. Scores stay on a consistent 0-100 scale.
 
 ---
 
-## Step 4: Run harness tests manually
+## Step 5: Run tests manually (optional)
 
-You can run any harness's test suite directly against a submission:
+You can run any part of the test suite directly against a submission, outside the scorer:
 
 ```bash
-# Set the command env var for the harness you're testing
-export MINI_REDIS_CMD="python submissions/mini-redis-claude-opus-4-6-20260311T225723Z/workspace/mini_redis.py"
+# Tell the test suite where the implementation is (use an absolute path)
+export MINI_REDIS_CMD="python /full/path/to/submissions/mini-redis-.../workspace/mini_redis.py"
 
-# Run by tier
+# Run just the core tests
 python -m pytest harnesses/mini-redis/tests/tier1/ -v
-python -m pytest harnesses/mini-redis/tests/tier2/ -v
-python -m pytest harnesses/mini-redis/tests/tier3/ -v
 
-# Run adversarial tests
+# Run adversarial edge cases
 python -m pytest harnesses/mini-redis/tests/adversarial/ -v --tb=short
 
 # Run everything
 python -m pytest harnesses/mini-redis/tests/ -q
 ```
 
-The env var pattern is `MINI_<HARNESS>_CMD` with the harness name uppercased and hyphens replaced with underscores:
+Each harness uses its own env var:
 
-| Harness | Env var | Example |
-|---------|---------|---------|
-| mini-git | `MINI_GIT_CMD` | `python path/to/mini_git.py` |
-| mini-redis | `MINI_REDIS_CMD` | `python path/to/mini_redis.py` |
-| mini-sqlite | `MINI_SQLITE_CMD` | `python path/to/mini_sqlite.py` |
+| Harness | Env var |
+|---------|---------|
+| mini-git | `MINI_GIT_CMD` |
+| mini-redis | `MINI_REDIS_CMD` |
+| mini-sqlite | `MINI_SQLITE_CMD` |
 
 ---
 
-## Step 5: Verify scorer infrastructure
+## Step 6: Verify the scoring infrastructure itself
 
-The `tests/` directory at the project root contains unit tests for the scoring infrastructure itself — not the harness tests.
+The `tests/` directory at the project root has unit tests for the scorer (not for the harnesses):
 
 ```bash
 python -m pytest tests/ -v
 ```
 
-Expected: 6 tests pass covering:
-- `_extract_timing`: performance benchmark output parser handles all print formats
-- `_redistribute_na_weight`: N/A dimension weight redistribution is proportional and sums to 1.0
+Expected: 6 tests pass. These verify the performance parser and weight redistribution logic.
 
 ---
 
-## Step 6: Understand the held-out tests
+## Step 7: Score someone else's code
 
-Each harness has a `tests/held-out/` directory that is **gitignored** — it never appears in the public repo. The scorer finds it automatically and includes those tests in the adversarial score.
-
-Entries scored with held-out tests are marked `"verified": true` in the scorecard JSON.
-
-To add your own held-out tests: create `harnesses/<harness>/tests/held-out/test_*.py` following the same conftest pattern. They run automatically next time you score.
-
----
-
-## Step 7: Score a manual submission
-
-Output from Cursor, Copilot, Devin, a raw API call, anything:
+You can score code from any source — Cursor, Copilot, Devin, hand-written, whatever:
 
 ```bash
+# Create the submission structure
 mkdir -p submissions/my-run/workspace
 
-# Copy the generated code
-cp /path/to/generated/mini_redis.py submissions/my-run/workspace/
+# Put the generated code there
+cp /path/to/their/mini_redis.py submissions/my-run/workspace/
 
-# Write metadata
+# Create a metadata file (fill in what you know)
 cat > submissions/my-run/metadata.json << 'EOF'
 {
   "model": "gpt-4o",
@@ -254,52 +274,42 @@ pip install -e .
 ```
 
 **Tests all skipping**
+The env var isn't set or the path is wrong:
 ```bash
-echo $MINI_REDIS_CMD              # must be set
-python $MINI_REDIS_CMD SET x 1    # verify it runs
+echo $MINI_REDIS_CMD              # should print the command
+python $MINI_REDIS_CMD SET x 1    # should print "OK"
 ```
 
-**`--timeout` unrecognized**
+**`--timeout` or `--json-report` unrecognized**
+You didn't install with extras. Run:
 ```bash
-pip install pytest-timeout
+pip install -e ".[all]"
 ```
 
-**`--json-report` unrecognized**
+**`google-genai` / `anthropic` / `openai` import error**
+Same fix — install with extras:
 ```bash
-pip install pytest-json-report
+pip install -e ".[all]"
 ```
 
-**Mutation always 0 / `mutmut: command not found`**
-```bash
-pip install "mutmut<3"   # mutmut 3.x has a different API; use 2.x
-```
-
-**`google-genai` import error**
-```bash
-pip install google-genai
-```
-
-**Anthropic 401**
-The `ANTHROPIC_API_KEY` from Claude Code is a session token, not an API key. Get a real key at [console.anthropic.com/settings/keys](https://console.anthropic.com/settings/keys). Or set `ANTHROPIC_META_BENCHMARK_KEY` which is checked first.
+**Anthropic 401 error**
+The `ANTHROPIC_API_KEY` from a Claude Code session is a session token, not a real API key. Get one at [console.anthropic.com/settings/keys](https://console.anthropic.com/settings/keys) and set it as `ANTHROPIC_META_BENCHMARK_KEY`.
 
 **Gemini 429 quota exceeded**
-`gemini-2.5-pro` requires a paid tier. Switch to `gemini-2.5-flash`:
-```bash
-python -m runner.cli run --harness mini-redis --agent gemini-api --model gemini-2.5-flash
-```
+`gemini-2.5-pro` requires a paid tier on Google AI Studio.
 
 **Scorer shows 0 behavioral tests**
-Run from the project root, not a subdirectory:
+Run from the project root:
 ```bash
 cd meta-benchmark
 python -m runner.cli score --submission submissions/my-run --harness mini-redis
 ```
 
 **Leaderboard shows "Failed to load data"**
-Must be served via HTTP:
+The leaderboard HTML must be served over HTTP, not opened as a file:
 ```bash
 cd leaderboard && python -m http.server 8080
-# open http://localhost:8080  (not file:///...)
+# open http://localhost:8080
 ```
 
 ---
