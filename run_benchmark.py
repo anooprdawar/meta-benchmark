@@ -1,18 +1,19 @@
 #!/usr/bin/env python3
 """
-Run a full benchmark pass against one or more models and produce real scorecards.
+Run a full benchmark pass against one or more models across one or more harnesses.
 
 Usage:
-    python run_benchmark.py                           # all default models
-    python run_benchmark.py --models claude-opus-4-6
-    python run_benchmark.py --models gpt-5.4 gpt-5.3-codex gemini-2.5-pro
-    python run_benchmark.py --dry-run                 # skip LLM judge API calls in scoring
-    python run_benchmark.py --no-extension            # skip live extension round
+    python run_benchmark.py                                          # all models, all harnesses
+    python run_benchmark.py --models claude-opus-4-6                 # one model, all harnesses
+    python run_benchmark.py --harnesses mini-redis mini-sqlite       # all models, specific harnesses
+    python run_benchmark.py --models gpt-5.4 --harnesses mini-git   # one model, one harness
+    python run_benchmark.py --dry-run                                # skip LLM judge API calls
+    python run_benchmark.py --no-extension                           # skip live extension round
 
 Required environment variables (depending on models run):
-    ANTHROPIC_API_KEY          Claude models
-    GEMINI_API_KEY             Gemini models
-    OPENAI_META_BENCHMARK_KEY  OpenAI models
+    ANTHROPIC_META_BENCHMARK_KEY   Claude models (fallback: ANTHROPIC_API_KEY)
+    GEMINI_META_BENCHMARK_KEY      Gemini models (fallback: GEMINI_API_KEY)
+    OPENAI_META_BENCHMARK_KEY      OpenAI models (fallback: OPENAI_API_KEY)
 """
 
 from __future__ import annotations
@@ -27,10 +28,7 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-HARNESS = "mini-git"
-HARNESS_PATH = PROJECT_ROOT / "harnesses" / HARNESS
-
-RUNS = [
+DEFAULT_RUNS = [
     {"agent": "claude-api",  "model": "claude-opus-4-6"},
     {"agent": "gemini-api",  "model": "gemini-2.5-pro"},
     {"agent": "openai-api",  "model": "gpt-5.4"},
@@ -38,26 +36,41 @@ RUNS = [
 ]
 
 
-def run_one(agent_name: str, model: str, dry_run: bool, run_extension_live: bool = True) -> dict:
+def _discover_harnesses() -> list[str]:
+    """Return sorted list of harness names found in harnesses/."""
+    harnesses_dir = PROJECT_ROOT / "harnesses"
+    return sorted(p.name for p in harnesses_dir.iterdir() if p.is_dir() and (p / "prompt.md").exists())
+
+
+def run_one(
+    harness: str,
+    agent_name: str,
+    model: str,
+    dry_run: bool,
+    run_extension_live: bool = True,
+) -> dict:
     from runner.agents import get_agent
     from runner.environment import Environment
     from scorer.scorecard import score_submission
 
+    harness_path = PROJECT_ROOT / "harnesses" / harness
+
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     model_slug = model.replace("/", "-").replace(":", "-").replace(".", "-")
-    output_dir = PROJECT_ROOT / "submissions" / f"{HARNESS}-{model_slug}-{timestamp}"
+    output_dir = PROJECT_ROOT / "submissions" / f"{harness}-{model_slug}-{timestamp}"
     output_dir.mkdir(parents=True, exist_ok=True)
 
     print(f"\n{'='*60}")
-    print(f"  Model:  {model}")
-    print(f"  Agent:  {agent_name}")
-    print(f"  Output: {output_dir}")
+    print(f"  Harness: {harness}")
+    print(f"  Model:   {model}")
+    print(f"  Agent:   {agent_name}")
+    print(f"  Output:  {output_dir}")
     print(f"{'='*60}\n")
 
-    env = Environment(harness_path=HARNESS_PATH, output_dir=output_dir)
+    env = Environment(harness_path=harness_path, output_dir=output_dir)
     workspace = env.prepare()
 
-    agent = get_agent(agent_name, model=model, harness_path=HARNESS_PATH)
+    agent = get_agent(agent_name, model=model, harness_path=harness_path)
     agent_result = agent.run(workspace)
     env_result = env.capture_result(workspace)
 
@@ -66,14 +79,13 @@ def run_one(agent_name: str, model: str, dry_run: bool, run_extension_live: bool
     print(f"  Tokens:    {agent_result.tokens_input:,} in / {agent_result.tokens_output:,} out")
     print(f"  Est. cost: ${agent_result.cost_estimate_usd:.4f}")
 
-    # Write metadata.json into output_dir (which already contains workspace/)
     metadata = {
         "model": model,
         "agent_framework": agent_name,
         "agent_framework_version": "unknown",
         "scaffolding_config": {},
         "date": datetime.now(timezone.utc).isoformat(),
-        "harness": HARNESS,
+        "harness": harness,
         "harness_version": "1.0.0",
         "wall_clock_seconds": env_result.duration_seconds,
         "tokens_input": agent_result.tokens_input,
@@ -84,13 +96,12 @@ def run_one(agent_name: str, model: str, dry_run: bool, run_extension_live: bool
     (output_dir / "metadata.json").write_text(
         json.dumps(metadata, indent=2), encoding="utf-8"
     )
-    submission_path = output_dir
 
-    print(f"\nScoring {model}...")
+    print(f"\nScoring {model} on {harness}...")
     scorecard = score_submission(
-        submission_path=submission_path,
-        harness_path=HARNESS_PATH,
-        output_path=submission_path / "scorecard.json",
+        submission_path=output_dir,
+        harness_path=harness_path,
+        output_path=output_dir / "scorecard.json",
         dry_run=dry_run,
         python=sys.executable,
         agent=agent if run_extension_live else None,
@@ -100,8 +111,11 @@ def run_one(agent_name: str, model: str, dry_run: bool, run_extension_live: bool
 
 
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--models", nargs="+", help="Override models to run")
+    parser = argparse.ArgumentParser(
+        description="Run a full benchmark pass across harnesses and models.",
+    )
+    parser.add_argument("--models", nargs="+", help="Models to run (default: all)")
+    parser.add_argument("--harnesses", nargs="+", help="Harnesses to run (default: all)")
     parser.add_argument("--dry-run", action="store_true", help="Skip LLM judge API calls")
     parser.add_argument(
         "--no-extension",
@@ -112,28 +126,39 @@ def main():
 
     run_extension_live = not args.no_extension
 
-    runs_to_execute = RUNS
+    # Resolve harnesses
+    available_harnesses = _discover_harnesses()
+    harnesses = args.harnesses or available_harnesses
+    for h in harnesses:
+        if h not in available_harnesses:
+            print(f"error: harness '{h}' not found. Available: {available_harnesses}", file=sys.stderr)
+            return 1
+
+    # Resolve models
+    runs_to_execute = DEFAULT_RUNS
     if args.models:
-        # Map model name to agent
-        model_agent_map = {r["model"]: r["agent"] for r in RUNS}
+        model_agent_map = {r["model"]: r["agent"] for r in DEFAULT_RUNS}
         runs_to_execute = [
             {"model": m, "agent": model_agent_map.get(m, _infer_agent(m))}
             for m in args.models
         ]
 
     results = []
-    for run in runs_to_execute:
-        try:
-            scorecard = run_one(
-                run["agent"], run["model"],
-                dry_run=args.dry_run,
-                run_extension_live=run_extension_live,
-            )
-            results.append(scorecard)
-            print(f"\n✓ {run['model']}: {scorecard['total_score']:.1f}/100")
-        except Exception as e:
-            print(f"\n✗ {run['model']} failed: {e}", file=sys.stderr)
-            import traceback; traceback.print_exc()
+    for harness in harnesses:
+        for run in runs_to_execute:
+            try:
+                scorecard = run_one(
+                    harness=harness,
+                    agent_name=run["agent"],
+                    model=run["model"],
+                    dry_run=args.dry_run,
+                    run_extension_live=run_extension_live,
+                )
+                results.append(scorecard)
+                print(f"\n  {run['model']} on {harness}: {scorecard['total_score']:.1f}/100")
+            except Exception as e:
+                print(f"\n  {run['model']} on {harness} failed: {e}", file=sys.stderr)
+                import traceback; traceback.print_exc()
 
     if not results:
         print("\nNo successful runs.", file=sys.stderr)
@@ -143,9 +168,13 @@ def main():
     leaderboard_file = PROJECT_ROOT / "leaderboard" / "data" / "runs.json"
     existing = json.loads(leaderboard_file.read_text()) if leaderboard_file.exists() else []
 
-    # Convert scorecards to leaderboard format, replace sample entries for same model
-    new_ids = {r["model"] for r in results}
-    kept = [r for r in existing if r.get("_scored", False) and r.get("model") not in new_ids]
+    # Replace entries for same (harness, model) pair
+    new_keys = {(r["harness"], r["model"]) for r in results}
+    kept = [
+        r for r in existing
+        if r.get("_scored", False)
+        and (r.get("harness"), r.get("model")) not in new_keys
+    ]
 
     leaderboard_entries = []
     for sc in results:
@@ -175,8 +204,8 @@ def main():
     print("\n" + "="*60)
     print("  FINAL RESULTS")
     print("="*60)
-    for sc in sorted(results, key=lambda r: r["total_score"], reverse=True):
-        print(f"  {sc['model']:<30} {sc['total_score']:>6.1f}/100")
+    for sc in sorted(results, key=lambda r: (-r["total_score"],)):
+        print(f"  {sc['harness']:<16} {sc['model']:<30} {sc['total_score']:>6.1f}/100")
     print()
 
     return 0
@@ -191,8 +220,6 @@ def _infer_agent(model: str) -> str:
     if any(x in model for x in ["gpt", "o1", "o3", "o4"]):
         return "openai-api"
     return "claude-api"
-
-
 
 
 if __name__ == "__main__":
