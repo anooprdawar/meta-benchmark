@@ -60,9 +60,9 @@ class AnthropicAPIAgent:
 
         workspace_path = Path(workspace_path)
 
-        api_key = os.environ.get("ANTHROPIC_API_KEY")
+        api_key = os.environ.get("ANTHROPIC_META_BENCHMARK_KEY") or os.environ.get("ANTHROPIC_API_KEY")
         if not api_key:
-            raise RuntimeError("ANTHROPIC_API_KEY not set")
+            raise RuntimeError("ANTHROPIC_META_BENCHMARK_KEY (or ANTHROPIC_API_KEY) not set")
 
         client = anthropic.Anthropic(api_key=api_key)
 
@@ -125,9 +125,9 @@ class AnthropicAPIAgent:
         prompt_text = (self.harness_path / "prompt.md").read_text(encoding="utf-8")
         (workspace_path / "PROMPT.md").write_text(prompt_text, encoding="utf-8")
 
-        api_key = os.environ.get("ANTHROPIC_API_KEY")
+        api_key = os.environ.get("ANTHROPIC_META_BENCHMARK_KEY") or os.environ.get("ANTHROPIC_API_KEY")
         if not api_key:
-            raise RuntimeError("ANTHROPIC_API_KEY not set")
+            raise RuntimeError("ANTHROPIC_META_BENCHMARK_KEY (or ANTHROPIC_API_KEY) not set")
 
         client = anthropic.Anthropic(api_key=api_key)
 

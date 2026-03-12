@@ -39,9 +39,9 @@ class GeminiAPIAgent:
 
         workspace_path = Path(workspace_path)
 
-        api_key = os.environ.get("GEMINI_API_KEY")
+        api_key = os.environ.get("GEMINI_META_BENCHMARK_KEY") or os.environ.get("GEMINI_API_KEY")
         if not api_key:
-            raise RuntimeError("GEMINI_API_KEY not set")
+            raise RuntimeError("GEMINI_META_BENCHMARK_KEY (or GEMINI_API_KEY) not set")
 
         client = genai.Client(api_key=api_key)
         model_id = self.model.replace("models/", "")
@@ -105,9 +105,9 @@ class GeminiAPIAgent:
         prompt_text = (self.harness_path / "prompt.md").read_text(encoding="utf-8")
         (workspace_path / "PROMPT.md").write_text(prompt_text, encoding="utf-8")
 
-        api_key = os.environ.get("GEMINI_API_KEY")
+        api_key = os.environ.get("GEMINI_META_BENCHMARK_KEY") or os.environ.get("GEMINI_API_KEY")
         if not api_key:
-            raise RuntimeError("GEMINI_API_KEY not set")
+            raise RuntimeError("GEMINI_META_BENCHMARK_KEY (or GEMINI_API_KEY) not set")
 
         client = genai.Client(api_key=api_key)
 

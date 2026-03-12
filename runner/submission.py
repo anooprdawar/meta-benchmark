@@ -49,10 +49,9 @@ class Submission:
 
         Returns the path to the submission directory.
         """
-        timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-        model_slug = model.replace("/", "-").replace(":", "-")
-        submission_name = f"{harness}-{model_slug}-{timestamp}"
-        submission_path = self.submissions_root / submission_name
+        # The workspace is already inside the submission dir (output_dir/workspace),
+        # so the submission path is the workspace's parent.
+        submission_path = Path(workspace_path).parent
         submission_path.mkdir(parents=True, exist_ok=True)
 
         metadata: dict[str, Any] = {

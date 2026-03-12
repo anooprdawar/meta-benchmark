@@ -1,8 +1,8 @@
 """
-Direct OpenAI API agent — calls the OpenAI Chat Completions API and parses file output.
+Direct OpenAI API agent — calls the OpenAI Responses API and parses file output.
 
-Supports GPT-5.x and Codex models. Uses streaming for long outputs.
-API key read from OPENAI_META_BENCHMARK_KEY environment variable.
+Supports GPT-5.x, Codex, o3, and o4-mini models.
+API key read from OPENAI_META_BENCHMARK_KEY environment variable (falls back to OPENAI_API_KEY).
 """
 
 from __future__ import annotations
@@ -53,8 +53,42 @@ Rules:
 """
 
 
+def _get_client():
+    """Create an OpenAI client with the correct API key."""
+    import openai
+    api_key = os.environ.get("OPENAI_META_BENCHMARK_KEY") or os.environ.get("OPENAI_API_KEY")
+    if not api_key:
+        raise RuntimeError("OPENAI_META_BENCHMARK_KEY (or OPENAI_API_KEY) not set")
+    return openai.OpenAI(api_key=api_key)
+
+
+def _call_responses_api(client, model: str, instructions: str, user_input: str, label: str = "") -> tuple[str, int, int, float]:
+    """Call the OpenAI Responses API. Returns (text, tokens_in, tokens_out, elapsed)."""
+    print(f"  Calling {model} via OpenAI Responses API{' (' + label + ')' if label else ''}...")
+    start = time.monotonic()
+
+    response = client.responses.create(
+        model=model,
+        instructions=instructions,
+        input=user_input,
+        max_output_tokens=32768,
+    )
+
+    elapsed = time.monotonic() - start
+    print(f"  API call complete in {elapsed:.1f}s")
+
+    raw_text = response.output_text
+    tokens_input = 0
+    tokens_output = 0
+    if hasattr(response, "usage") and response.usage:
+        tokens_input = response.usage.input_tokens
+        tokens_output = response.usage.output_tokens
+
+    return raw_text, tokens_input, tokens_output, elapsed
+
+
 class OpenAIAPIAgent:
-    """Calls the OpenAI Chat Completions API and writes files to workspace."""
+    """Calls the OpenAI Responses API and writes files to workspace."""
 
     def __init__(self, model: str, harness_path: Path) -> None:
         self.model = model
@@ -63,60 +97,19 @@ class OpenAIAPIAgent:
     def extend(self, workspace_path: Path, extension_prompt: str) -> AgentResult:
         """Send a second API call with current code + extension prompt, overwrite files."""
         try:
-            import openai
+            import openai  # noqa: F401
         except ImportError:
-            raise RuntimeError("openai SDK not installed. Run: pip install openai")
+            raise RuntimeError("openai SDK not installed. Run: pip install openai>=2.0")
 
         workspace_path = Path(workspace_path)
-
-        api_key = os.environ.get("OPENAI_META_BENCHMARK_KEY") or os.environ.get("OPENAI_API_KEY")
-        if not api_key:
-            raise RuntimeError("OPENAI_META_BENCHMARK_KEY not set")
-
-        client = openai.OpenAI(api_key=api_key)
+        client = _get_client()
 
         current_code = _read_workspace_code(workspace_path)
         user_prompt = f"{extension_prompt}\n\n## Your current implementation\n\n{current_code}"
 
-        print(f"  Running extension round (second prompt)...")
-        print(f"  Calling {self.model} via OpenAI API (streaming)...")
-        start = time.monotonic()
-
-        raw_text = ""
-        tokens_input = 0
-        tokens_output = 0
-
-        if "codex" in self.model.lower():
-            response = client.responses.create(
-                model=self.model,
-                instructions=SYSTEM_PROMPT,
-                input=user_prompt,
-                max_output_tokens=32768,
-            )
-            raw_text = response.output_text
-            if hasattr(response, "usage") and response.usage:
-                tokens_input = response.usage.input_tokens
-                tokens_output = response.usage.output_tokens
-        else:
-            stream = client.chat.completions.create(
-                model=self.model,
-                max_completion_tokens=32768,
-                stream=True,
-                stream_options={"include_usage": True},
-                messages=[
-                    {"role": "system", "content": SYSTEM_PROMPT},
-                    {"role": "user", "content": user_prompt},
-                ],
-            )
-            for chunk in stream:
-                if chunk.choices and chunk.choices[0].delta.content:
-                    raw_text += chunk.choices[0].delta.content
-                if chunk.usage:
-                    tokens_input = chunk.usage.prompt_tokens
-                    tokens_output = chunk.usage.completion_tokens
-
-        elapsed = time.monotonic() - start
-        print(f"  Extension API call complete in {elapsed:.1f}s")
+        raw_text, tokens_input, tokens_output, _ = _call_responses_api(
+            client, self.model, SYSTEM_PROMPT, user_prompt, label="extension"
+        )
 
         costs = _MODEL_COSTS.get(self.model, _DEFAULT_COST)
         cost = (tokens_input / 1_000_000 * costs["input"]
@@ -142,9 +135,9 @@ class OpenAIAPIAgent:
 
     def run(self, workspace_path: Path) -> AgentResult:
         try:
-            import openai
+            import openai  # noqa: F401
         except ImportError:
-            raise RuntimeError("openai SDK not installed. Run: pip install openai")
+            raise RuntimeError("openai SDK not installed. Run: pip install openai>=2.0")
 
         workspace_path = Path(workspace_path)
         workspace_path.mkdir(parents=True, exist_ok=True)
@@ -152,51 +145,11 @@ class OpenAIAPIAgent:
         prompt_text = (self.harness_path / "prompt.md").read_text(encoding="utf-8")
         (workspace_path / "PROMPT.md").write_text(prompt_text, encoding="utf-8")
 
-        api_key = os.environ.get("OPENAI_META_BENCHMARK_KEY") or os.environ.get("OPENAI_API_KEY")
-        if not api_key:
-            raise RuntimeError("OPENAI_META_BENCHMARK_KEY not set")
+        client = _get_client()
 
-        client = openai.OpenAI(api_key=api_key)
-
-        print(f"  Calling {self.model} via OpenAI API (streaming)...")
-        start = time.monotonic()
-
-        raw_text = ""
-        tokens_input = 0
-        tokens_output = 0
-
-        if "codex" in self.model.lower():
-            # Codex models use the Responses API
-            response = client.responses.create(
-                model=self.model,
-                instructions=SYSTEM_PROMPT,
-                input=prompt_text,
-                max_output_tokens=32768,
-            )
-            raw_text = response.output_text
-            if hasattr(response, "usage") and response.usage:
-                tokens_input = response.usage.input_tokens
-                tokens_output = response.usage.output_tokens
-        else:
-            stream = client.chat.completions.create(
-                model=self.model,
-                max_completion_tokens=32768,
-                stream=True,
-                stream_options={"include_usage": True},
-                messages=[
-                    {"role": "system", "content": SYSTEM_PROMPT},
-                    {"role": "user", "content": prompt_text},
-                ],
-            )
-            for chunk in stream:
-                if chunk.choices and chunk.choices[0].delta.content:
-                    raw_text += chunk.choices[0].delta.content
-                if chunk.usage:
-                    tokens_input = chunk.usage.prompt_tokens
-                    tokens_output = chunk.usage.completion_tokens
-
-        elapsed = time.monotonic() - start
-        print(f"  API call complete in {elapsed:.1f}s")
+        raw_text, tokens_input, tokens_output, _ = _call_responses_api(
+            client, self.model, SYSTEM_PROMPT, prompt_text
+        )
 
         costs = _MODEL_COSTS.get(self.model, _DEFAULT_COST)
         cost = (tokens_input / 1_000_000 * costs["input"]

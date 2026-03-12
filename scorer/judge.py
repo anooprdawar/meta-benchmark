@@ -148,7 +148,11 @@ def _dry_run_result(judge_models: list[str]) -> JudgeResult:
 def _llm_available() -> bool:
     """Check if an LLM API is available for judge calls."""
     import os
-    return bool(os.environ.get("ANTHROPIC_API_KEY") or os.environ.get("OPENAI_API_KEY"))
+    return bool(
+        os.environ.get("ANTHROPIC_META_BENCHMARK_KEY")
+        or os.environ.get("ANTHROPIC_API_KEY")
+        or os.environ.get("OPENAI_API_KEY")
+    )
 
 
 def _load_calibration(calibration_path: Path) -> dict[str, Any]:
@@ -244,8 +248,10 @@ def _call_judge_model(
 
     # Try Anthropic SDK
     try:
+        import os as _os
         import anthropic
-        client = anthropic.Anthropic()
+        _api_key = _os.environ.get("ANTHROPIC_META_BENCHMARK_KEY") or _os.environ.get("ANTHROPIC_API_KEY")
+        client = anthropic.Anthropic(api_key=_api_key)
         message = client.messages.create(
             model=model,
             max_tokens=2000,
