@@ -68,11 +68,6 @@ def _find_cmd(workspace: Path, harness_name: str) -> list[str]:
     return [sys.executable, str(workspace / f"{stem}.py")]
 
 
-def _find_mini_git_cmd(workspace: Path) -> list[str]:
-    """Backwards-compat alias -- delegates to _find_cmd."""
-    return _find_cmd(workspace, "mini-git")
-
-
 def run_behavioral(
     submission_path: Path,
     harness_path: Path,
@@ -129,15 +124,11 @@ def _run_pytest_tier(
     tier_path: Path,
     tests_root: Path,
     impl_cmd: list[str],
-    cmd_var: str = "MINI_GIT_CMD",
+    cmd_var: str,
     python: str = sys.executable,
     timeout: int = 300,
-    # Keep old kwarg name as alias for callers that haven't updated yet
-    mini_git_cmd: list[str] | None = None,
 ) -> TierResult:
     """Run pytest for one tier and parse results."""
-    if mini_git_cmd is not None:
-        impl_cmd = mini_git_cmd  # backwards compat
     tier_name = tier_path.name
 
     cmd = [

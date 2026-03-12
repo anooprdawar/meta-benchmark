@@ -111,11 +111,7 @@ def _run_benchmark(
     thresh: dict,
     python: str,
     timeout: int,
-    # backwards compat
-    mini_git_cmd: list[str] | None = None,
 ) -> BenchmarkResult:
-    if mini_git_cmd is not None:
-        impl_cmd = mini_git_cmd
     import os, time
     cmd = [
         python, "-m", "pytest", str(bench_file),
