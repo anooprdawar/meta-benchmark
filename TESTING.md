@@ -314,4 +314,4 @@ cd leaderboard && python -m http.server 8080
 | 30-55 | Partial. Tier 1 works, Tier 2 rough, Tier 3 gaps. |
 | < 30 | Broken. Core implementation bug stops most tests. |
 
-From actual runs: frontier models score 68-83 depending on harness difficulty. mini-git is the easiest (~76-80), mini-redis is moderate (~80-83), mini-sqlite is hardest (~68-74). The spread within a harness is typically 4-6 points between the top and bottom frontier model.
+From scored runs: frontier models score 68-83 depending on harness difficulty. mini-git clusters at 76-80, mini-redis at 80-83, mini-sqlite at 68-75. The spread within a harness is typically 4-6 points between the top and bottom frontier model.

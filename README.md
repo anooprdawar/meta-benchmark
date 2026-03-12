@@ -88,44 +88,46 @@ When a dimension is not applicable (e.g. extension tests timeout), its weight is
 
 **Output:** A structured JSON scorecard + human-readable report. All runs are public.
 
-## Real results
+## Results
 
-All scores are from actual API calls, actual generated code, actual test runs. No cherry-picking — these are single runs, not best-of-N.
+Single runs, not best-of-N. Scores from `scorecard.json` files in `submissions/`. The leaderboard (`leaderboard/data/runs.json`) is the canonical source for mini-git scores; mini-redis and mini-sqlite scores are from individual submission scorecards and will be added to the leaderboard as we stabilize the pipeline.
 
 ### mini-git
 
 | Model | Score | Functional | Adversarial | Extension | Performance | Quality | Cost |
 |-------|-------|-----------|-------------|-----------|-------------|---------|------|
-| gemini-2.5-pro | **79.9** | 70/72 (97%) | 146/166 (88%) | 4/16 | 100 | 37.3 | $0.14 |
-| gpt-5.4 | **79.3** | 70/72 (97%) | 146/166 (88%) | 4/16 | 100 | 60.5 | $0.15 |
-| gpt-5.3-codex | **78.7** | 70/72 (97%) | 146/166 (88%) | 4/16 | 100 | 26.0 | $0.04 |
-| claude-opus-4-6 | **76.1** | 70/72 (97%) | 146/166 (88%) | 4/16 | 35.4 | 72.8 | $1.40 |
+| gemini-2.5-pro | **79.86** | 70/72 (97%) | 146/166 (88%) | 4/16 | 100 | 37.3 | $0.14 |
+| gpt-5.4 | **79.32** | 70/72 (97%) | 146/166 (88%) | 4/16 | 100 | 60.5 | $0.15 |
+| gpt-5.3-codex | **78.73** | 70/72 (97%) | 146/166 (88%) | 4/16 | 100 | 26.0 | $0.04 |
+| claude-opus-4-6 | **76.13** | 70/72 (97%) | 146/166 (88%) | 4/16 | 100 | — | $1.40 |
+
+claude-opus-4-6 quality is `—` because that run used `dry_run=True` for the LLM judge. A separate non-dry-run submission scored 72.8 quality but with a different total (73.64). We don't mix numbers across runs.
 
 ### mini-redis
 
 | Model | Score | Functional | Adversarial | Reliability | Quality | Cost |
 |-------|-------|-----------|-------------|-------------|---------|------|
-| claude-opus-4-6 | **82.5** | 65/65 (100%) | 46/46 (100%) | 7/8 (87.5%) | 55.3 | ~$1.00 |
-| gpt-5.4 | **81.5** | 61/65 (92%) | 46/46 (100%) | 8/8 (100%) | 60.3 | ~$0.15 |
-| gemini-2.5-pro | **80.5** | 59/65 (90%) | 45/46 (98%) | 8/8 (100%) | 61.9 | ~$0.12 |
+| claude-opus-4-6 | **82.45** | 65/65 (100%) | 46/46 (100%) | 7/8 (88%) | 55.2 | ~$1.00 |
+| gpt-5.4 | **81.46** | 60/65 (92%) | 46/46 (100%) | 8/8 (100%) | 60.3 | ~$0.15 |
+| gemini-2.5-pro | **80.53** | 59/65 (91%) | 45/46 (98%) | 8/8 (100%) | 61.9 | ~$0.12 |
 
 ### mini-sqlite
 
 | Model | Score | Functional | Adversarial | Reliability | Quality | Cost |
 |-------|-------|-----------|-------------|-------------|---------|------|
-| claude-opus-4-6 | **74.3** | 56/65 (89%) | 25/30 (83%) | 5/7 (71%) | 58.6 | ~$1.00 |
-| gpt-5.4 | **69.7** | 50/65 (81%) | 24/30 (80%) | 5/7 (71%) | 48.1 | ~$0.15 |
-| gemini-2.5-pro | **68.2** | 46/65 (76%) | 21/30 (70%) | 6/7 (86%) | 53.5 | ~$0.12 |
+| claude-opus-4-6 | **74.31** | 56/65 (86%) | 25/30 (83%) | 5/7 (71%) | 58.6 | ~$1.00 |
+| gpt-5.4 | **69.76** | 50/65 (77%) | 24/30 (80%) | 5/7 (71%) | 49.0 | ~$0.15 |
+| gemini-2.5-pro | **68.17** | 46/65 (71%) | 21/30 (70%) | 6/7 (86%) | 53.5 | ~$0.12 |
 
 ### Cross-harness average
 
 | Model | mini-git | mini-redis | mini-sqlite | Average |
 |-------|----------|-----------|-------------|---------|
-| claude-opus-4-6 | 76.1 | 82.5 | 74.3 | **77.6** |
-| gpt-5.4 | 79.3 | 81.5 | 69.7 | **76.8** |
-| gemini-2.5-pro | 79.9 | 80.5 | 68.2 | **76.2** |
+| claude-opus-4-6 | 76.13 | 82.45 | 74.31 | **77.63** |
+| gpt-5.4 | 79.32 | 81.46 | 69.76 | **76.85** |
+| gemini-2.5-pro | 79.86 | 80.53 | 68.17 | **76.19** |
 
-What the data shows: All three frontier models are within ~1 point of each other on average. The ranking changes by harness — there's no single winner. mini-sqlite (the hardest harness) shows the widest spread. Claude leads on functional completeness and code quality. Gemini and OpenAI lead on performance. All models hit 0/16 on extension tests across mini-redis and mini-sqlite — second-prompt adaptability remains an open problem.
+All three frontier models are within ~1.5 points of each other on average. The ranking changes by harness — there's no single winner. mini-sqlite (the hardest harness) shows the widest spread. All models hit 0/16 on extension tests across mini-redis and mini-sqlite — second-prompt adaptability remains an open problem.
 
 ## Architecture
 
@@ -216,7 +218,7 @@ Each agent checks for a `*_META_BENCHMARK_KEY` env var first, then falls back to
 
 ## Anti-Goodhart measures
 
-Benchmarks rot when they become training targets. These are real, implemented countermeasures — not aspirations.
+Benchmarks rot when they become training targets. These countermeasures are implemented today, not planned.
 
 **1. Private held-out tests**
 

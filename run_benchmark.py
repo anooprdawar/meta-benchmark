@@ -143,9 +143,9 @@ def main():
     leaderboard_file = PROJECT_ROOT / "leaderboard" / "data" / "runs.json"
     existing = json.loads(leaderboard_file.read_text()) if leaderboard_file.exists() else []
 
-    # Convert scorecards to leaderboard format, replace synthetic samples for same model
+    # Convert scorecards to leaderboard format, replace sample entries for same model
     new_ids = {r["model"] for r in results}
-    kept = [r for r in existing if not _is_synthetic(r) and r.get("model") not in new_ids]
+    kept = [r for r in existing if r.get("_scored", False) and r.get("model") not in new_ids]
 
     leaderboard_entries = []
     for sc in results:
@@ -162,7 +162,7 @@ def main():
             "cost_usd": sc["metadata"].get("cost_usd", 0),
             "total_score": sc["total_score"],
             "scores": sc["scores"],
-            "_real": True,
+            "_scored": True,
         }
         leaderboard_entries.append(entry)
 
@@ -193,9 +193,6 @@ def _infer_agent(model: str) -> str:
     return "claude-api"
 
 
-def _is_synthetic(entry: dict) -> bool:
-    """Identify the hand-written sample data entries."""
-    return not entry.get("_real", False)
 
 
 if __name__ == "__main__":

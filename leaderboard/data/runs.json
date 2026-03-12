@@ -144,7 +144,7 @@
         "notes": "LLM judge score (models: claude-sonnet-4-6...)"
       }
     },
-    "_real": true
+    "_scored": true
   },
   {
     "id": "mini-git-gpt-5-4-20260311T111728Z",
@@ -291,7 +291,7 @@
         "notes": "LLM judge score (models: claude-sonnet-4-6...)"
       }
     },
-    "_real": true
+    "_scored": true
   },
   {
     "id": "mini-git-gpt-5-3-codex-20260311T112303Z",
@@ -438,7 +438,7 @@
         "notes": "LLM judge score (models: claude-sonnet-4-6...)"
       }
     },
-    "_real": true
+    "_scored": true
   },
   {
     "id": "mini-git-claude-opus-4-6-20260311T110513Z",
@@ -586,7 +586,7 @@
         "notes": "dry_run=True: no LLM calls made. Run with dry_run=False for real scoring."
       }
     },
-    "_real": true
+    "_scored": true
   },
   {
     "id": "mini-git-gemini-2-5-flash-20260310T144538Z",
@@ -731,6 +731,6 @@
         "notes": "dry_run=True: no LLM calls made. Run with dry_run=False for real scoring."
       }
     },
-    "_real": true
+    "_scored": true
   }
 ]
