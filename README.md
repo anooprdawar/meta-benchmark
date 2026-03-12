@@ -88,46 +88,48 @@ When a dimension is not applicable (e.g. extension tests timeout), its weight is
 
 **Output:** A structured JSON scorecard + human-readable report. All runs are public.
 
+<!-- BEGIN RESULTS -->
 ## Results
 
-Single runs, not best-of-N. Scores from `scorecard.json` files in `submissions/`. The leaderboard (`leaderboard/data/runs.json`) is the canonical source for mini-git scores; mini-redis and mini-sqlite scores are from individual submission scorecards and will be added to the leaderboard as we stabilize the pipeline.
+Generated from `leaderboard/data/runs.json` by `python update_readme.py`.
+Single runs, not best-of-N.
 
 ### mini-git
 
 | Model | Score | Functional | Adversarial | Extension | Performance | Quality | Cost |
 |-------|-------|-----------|-------------|-----------|-------------|---------|------|
-| gemini-2.5-pro | **79.86** | 70/72 (97%) | 146/166 (88%) | 4/16 | 100 | 37.3 | $0.14 |
-| gpt-5.4 | **79.32** | 70/72 (97%) | 146/166 (88%) | 4/16 | 100 | 60.5 | $0.15 |
-| gpt-5.3-codex | **78.73** | 70/72 (97%) | 146/166 (88%) | 4/16 | 100 | 26.0 | $0.04 |
-| claude-opus-4-6 | **76.13** | 70/72 (97%) | 146/166 (88%) | 4/16 | 100 | — | $1.40 |
-
-claude-opus-4-6 quality is `—` because that run used `dry_run=True` for the LLM judge. A separate non-dry-run submission scored 72.8 quality but with a different total (73.64). We don't mix numbers across runs.
+| gemini-2.5-pro | **79.86** | 70/72 (97%) | 146/166 (87%) | 4/16 | 100 | 37.3 | $0.14 |
+| gpt-5.4 | **79.32** | 70/72 (97%) | 146/166 (87%) | 4/16 | 100 | 60.5 | $0.15 |
+| gpt-5.3-codex | **78.73** | 70/72 (97%) | 146/166 (87%) | 4/16 | 100 | 26.0 | $0.04 |
+| claude-opus-4-6 | **76.13** | 70/72 (97%) | 146/166 (87%) | 4/16 | 100 | — | $1.41 |
 
 ### mini-redis
 
 | Model | Score | Functional | Adversarial | Reliability | Quality | Cost |
 |-------|-------|-----------|-------------|-------------|---------|------|
-| claude-opus-4-6 | **82.45** | 65/65 (100%) | 46/46 (100%) | 7/8 (88%) | 55.2 | ~$1.00 |
-| gpt-5.4 | **81.46** | 60/65 (92%) | 46/46 (100%) | 8/8 (100%) | 60.3 | ~$0.15 |
-| gemini-2.5-pro | **80.53** | 59/65 (91%) | 45/46 (98%) | 8/8 (100%) | 61.9 | ~$0.12 |
+| claude-opus-4-6 | **82.45** | 65/65 (100%) | 46/46 (100%) | 7/8 (87%) | 55.2 | $0.54 |
+| gpt-5.4 | **81.46** | 61/65 (93%) | 46/46 (100%) | 8/8 (100%) | 60.3 | $0.08 |
+| gemini-2.5-pro | **80.53** | 59/65 (90%) | 45/46 (97%) | 8/8 (100%) | 61.9 | $0.06 |
 
 ### mini-sqlite
 
 | Model | Score | Functional | Adversarial | Reliability | Quality | Cost |
 |-------|-------|-----------|-------------|-------------|---------|------|
-| claude-opus-4-6 | **74.31** | 56/65 (86%) | 25/30 (83%) | 5/7 (71%) | 58.6 | ~$1.00 |
-| gpt-5.4 | **69.76** | 50/65 (77%) | 24/30 (80%) | 5/7 (71%) | 49.0 | ~$0.15 |
-| gemini-2.5-pro | **68.17** | 46/65 (71%) | 21/30 (70%) | 6/7 (86%) | 53.5 | ~$0.12 |
+| claude-opus-4-6 | **74.31** | 56/65 (86%) | 25/30 (83%) | 5/7 (71%) | 58.6 | $1.01 |
+| gpt-5.4 | **69.76** | 50/65 (76%) | 24/30 (80%) | 5/7 (71%) | 49.0 | $0.14 |
+| gemini-2.5-pro | **68.17** | 46/65 (70%) | 21/30 (70%) | 6/7 (85%) | 53.5 | $0.12 |
 
 ### Cross-harness average
 
 | Model | mini-git | mini-redis | mini-sqlite | Average |
-|-------|----------|-----------|-------------|---------|
+|-------|------|------|------|---------|
+| gpt-5.3-codex | 78.73 | — | — | **78.73** |
 | claude-opus-4-6 | 76.13 | 82.45 | 74.31 | **77.63** |
 | gpt-5.4 | 79.32 | 81.46 | 69.76 | **76.85** |
 | gemini-2.5-pro | 79.86 | 80.53 | 68.17 | **76.19** |
 
-All three frontier models are within ~1.5 points of each other on average. The ranking changes by harness — there's no single winner. mini-sqlite (the hardest harness) shows the widest spread. All models hit 0/16 on extension tests across mini-redis and mini-sqlite — second-prompt adaptability remains an open problem.
+All three frontier models are within ~1.5 points of each other on average. The ranking changes by harness — there's no single winner. mini-sqlite (the hardest harness) shows the widest spread.
+<!-- END RESULTS -->
 
 ## Architecture
 

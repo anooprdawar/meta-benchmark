@@ -1,5 +1,425 @@
 [
   {
+    "id": "mini-redis-claude-opus-4-6-20260311T225723Z",
+    "harness": "mini-redis",
+    "harness_version": "1.0.0",
+    "model": "claude-opus-4-6",
+    "agent_framework": "claude-api",
+    "date": "2026-03-11T22:58:26.287491+00:00",
+    "wall_clock_seconds": 63.009,
+    "tokens_input": 1707,
+    "tokens_output": 6797,
+    "cost_usd": 0.5354,
+    "total_score": 82.45,
+    "scores": {
+      "functional": {
+        "score": 100.0,
+        "weight": 0.35454545454545455,
+        "detail": {
+          "total_passed": 65,
+          "total_tests": 65,
+          "tiers": {
+            "tier1": {
+              "passed": 17,
+              "total": 17,
+              "score": 100.0
+            },
+            "tier2": {
+              "passed": 23,
+              "total": 23,
+              "score": 100.0
+            },
+            "tier3": {
+              "passed": 25,
+              "total": 25,
+              "score": 100.0
+            }
+          }
+        },
+        "notes": "65/65 tests passing"
+      },
+      "adversarial": {
+        "score": 100.0,
+        "weight": 0.17727272727272728,
+        "detail": {
+          "passed": 46,
+          "total": 46,
+          "survival_rate": 100.0,
+          "held_out_passed": 0,
+          "held_out_total": 0,
+          "verified": false
+        },
+        "notes": "46/46 edge cases survived"
+      },
+      "extension": {
+        "score": 0.0,
+        "weight": 0.1181818181818182,
+        "detail": {
+          "passed": 0,
+          "total": 16,
+          "phase": "static"
+        },
+        "notes": "0/16 extension tests passing"
+      },
+      "mutation": {
+        "score": 0.0,
+        "weight": 0.0,
+        "detail": {
+          "killed": 0,
+          "survived": 0,
+          "total": 0,
+          "method": "unavailable"
+        },
+        "notes": "No test files found in submission workspace."
+      },
+      "performance": {
+        "score": 100.0,
+        "weight": 0.15,
+        "detail": {
+          "get_10k_keys": {
+            "p50": 0.033,
+            "p95": 0.034,
+            "target_p95": 1.0,
+            "score": 100.0,
+            "skipped": false
+          },
+          "lrange_10k_list": {
+            "p50": 0.033,
+            "p95": 0.034,
+            "target_p95": 2.0,
+            "score": 100.0,
+            "skipped": false
+          },
+          "hgetall_1k_fields": {
+            "p50": 0.03,
+            "p95": 0.03,
+            "target_p95": 1.0,
+            "score": 100.0,
+            "skipped": false
+          }
+        },
+        "notes": ""
+      },
+      "reliability": {
+        "score": 87.5,
+        "weight": 0.1,
+        "detail": {
+          "passed": 7,
+          "total": 8
+        },
+        "notes": "7/8 reliability scenarios passing"
+      },
+      "quality": {
+        "score": 55.2,
+        "weight": 0.1,
+        "detail": {
+          "plumbing_porcelain_separation": {
+            "score": 78.7,
+            "reasoning": "RedisStore is a clean, independently testable class with no printing inside it; run_command() acts as a thin CLI dispatcher. Minor concern: run_command() creates the store internally rather than accepting it as a dependency, making unit testing slightly harder."
+          },
+          "object_model_abstraction": {
+            "score": 37.3,
+            "reasoning": "The implementation uses the stringly-typed metadata pattern (`{'type': 'string', 'value': ..., 'ttl': None}`) explicitly called out as a 25-point indicator, though Python native types are used for the values themselves (list for list, dict for hash). Sets are stored as lists rather than actual Python sets, which is a notable abstraction weakness. No dataclasses or typed containers are used."
+          },
+          "naming_consistency": {
+            "score": 81.7,
+            "reasoning": "Naming is highly consistent throughout \u2014 snake_case everywhere, private helpers prefixed with underscore, command methods named after Redis commands. The pattern of _check_type + _get_entry is applied uniformly across all command implementations."
+          },
+          "test_quality": {
+            "score": 0.0,
+            "reasoning": "No test file or test suite was provided in the implementation. There are no tests at all to evaluate."
+          },
+          "scope_discipline": {
+            "score": 78.3,
+            "reasoning": "All standard Redis commands appear to be implemented (SET, GET, DEL, EXISTS, MSET, MGET, LPUSH, RPUSH, LPOP, RPOP, LRANGE, HSET, HGET, HDEL, HGETALL, HKEYS, EXPIRE, TTL, PERSIST, SADD, SREM, SMEMBERS, SISMEMBER, INCR, DECR). The fsync-based persistence is a reasonable addition; without a spec it's unclear if PERSIST and HKEYS were explicitly requested."
+          }
+        },
+        "notes": "LLM judge score (models: claude-sonnet-4-6...)"
+      }
+    },
+    "_scored": true
+  },
+  {
+    "id": "mini-redis-gpt-5.4-20260311T231854Z",
+    "harness": "mini-redis",
+    "harness_version": "1.0.0",
+    "model": "gpt-5.4",
+    "agent_framework": "openai-api",
+    "date": "2026-03-11T23:19:46.985644+00:00",
+    "wall_clock_seconds": 52.315,
+    "tokens_input": 1503,
+    "tokens_output": 4870,
+    "cost_usd": 0.0768,
+    "total_score": 81.46,
+    "scores": {
+      "functional": {
+        "score": 92.25,
+        "weight": 0.35454545454545455,
+        "detail": {
+          "total_passed": 61,
+          "total_tests": 65,
+          "tiers": {
+            "tier1": {
+              "passed": 15,
+              "total": 17,
+              "score": 88.24
+            },
+            "tier2": {
+              "passed": 21,
+              "total": 23,
+              "score": 91.3
+            },
+            "tier3": {
+              "passed": 25,
+              "total": 25,
+              "score": 100.0
+            }
+          }
+        },
+        "notes": "61/65 tests passing"
+      },
+      "adversarial": {
+        "score": 100.0,
+        "weight": 0.17727272727272728,
+        "detail": {
+          "passed": 46,
+          "total": 46,
+          "survival_rate": 100.0,
+          "held_out_passed": 0,
+          "held_out_total": 0,
+          "verified": false
+        },
+        "notes": "46/46 edge cases survived"
+      },
+      "extension": {
+        "score": 0.0,
+        "weight": 0.1181818181818182,
+        "detail": {
+          "passed": 0,
+          "total": 16,
+          "phase": "static"
+        },
+        "notes": "0/16 extension tests passing"
+      },
+      "mutation": {
+        "score": 0.0,
+        "weight": 0.0,
+        "detail": {
+          "killed": 0,
+          "survived": 0,
+          "total": 0,
+          "method": "unavailable"
+        },
+        "notes": "No test files found in submission workspace."
+      },
+      "performance": {
+        "score": 100.0,
+        "weight": 0.15,
+        "detail": {
+          "get_10k_keys": {
+            "p50": 0.038,
+            "p95": 0.04,
+            "target_p95": 1.0,
+            "score": 100.0,
+            "skipped": false
+          },
+          "lrange_10k_list": {
+            "p50": 0.035,
+            "p95": 0.036,
+            "target_p95": 2.0,
+            "score": 100.0,
+            "skipped": false
+          },
+          "hgetall_1k_fields": {
+            "p50": 0.033,
+            "p95": 0.035,
+            "target_p95": 1.0,
+            "score": 100.0,
+            "skipped": false
+          }
+        },
+        "notes": ""
+      },
+      "reliability": {
+        "score": 100.0,
+        "weight": 0.1,
+        "detail": {
+          "passed": 8,
+          "total": 8
+        },
+        "notes": "8/8 reliability scenarios passing"
+      },
+      "quality": {
+        "score": 60.28,
+        "weight": 0.1,
+        "detail": {
+          "plumbing_porcelain_separation": {
+            "score": 86.0,
+            "reasoning": "RedisStore is cleanly separated from CLI concerns with no printing inside the store; execute_command() acts as a thin dispatcher and main() is minimal. The only minor issue is that formatting helpers like quote_string and format_numbered_list live in the same file rather than being clearly partitioned, but they're not mixed into the store logic."
+          },
+          "object_model_abstraction": {
+            "score": 51.7,
+            "reasoning": "Python native types are used correctly (list for lists, dict for hashes, sorted list for sets) but the internal representation uses a stringly-typed schema with {'type': ..., 'value': ..., 'expire_at': ...} dicts rather than dataclasses or typed containers. Type checking relies on string comparison of the 'type' field rather than isinstance checks."
+          },
+          "naming_consistency": {
+            "score": 86.0,
+            "reasoning": "Naming is consistently snake_case throughout, private methods are prefixed with underscore, and similar operations follow the same pattern (e.g., _require_type, _set_entry). The only minor inconsistency is that the public delete method doesn't follow the Redis 'DEL' naming convention (uses 'delete' vs others like 'set', 'get', 'mset')."
+          },
+          "test_quality": {
+            "score": 0.0,
+            "reasoning": "No test file is provided in the implementation \u2014 there are zero tests included in the submission, so this dimension cannot be scored above 0."
+          },
+          "scope_discipline": {
+            "score": 77.7,
+            "reasoning": "All standard Redis commands appear implemented (SET, GET, DEL, EXISTS, MSET, MGET, LPUSH, RPUSH, LPOP, RPOP, LRANGE, HSET, HGET, HDEL, HGETALL, HKEYS, EXPIRE, TTL, PERSIST, SADD, SREM, SMEMBERS, SISMEMBER, INCR, DECR). However, PERSIST and HKEYS are additions beyond a typical minimal spec, and the atomic file save with fsync/directory sync is beyond typical scope without being documented as extra."
+          }
+        },
+        "notes": "LLM judge score (models: claude-sonnet-4-6...)"
+      }
+    },
+    "_scored": true
+  },
+  {
+    "id": "mini-redis-gemini-2.5-pro-20260311T230915Z",
+    "harness": "mini-redis",
+    "harness_version": "1.0.0",
+    "model": "gemini-2.5-pro",
+    "agent_framework": "gemini-api",
+    "date": "2026-03-11T23:11:00.972053+00:00",
+    "wall_clock_seconds": 105.709,
+    "tokens_input": 1604,
+    "tokens_output": 6286,
+    "cost_usd": 0.0649,
+    "total_score": 80.53,
+    "scores": {
+      "functional": {
+        "score": 90.25,
+        "weight": 0.35454545454545455,
+        "detail": {
+          "total_passed": 59,
+          "total_tests": 65,
+          "tiers": {
+            "tier1": {
+              "passed": 15,
+              "total": 17,
+              "score": 88.24
+            },
+            "tier2": {
+              "passed": 21,
+              "total": 23,
+              "score": 91.3
+            },
+            "tier3": {
+              "passed": 23,
+              "total": 25,
+              "score": 92.0
+            }
+          }
+        },
+        "notes": "59/65 tests passing"
+      },
+      "adversarial": {
+        "score": 97.83,
+        "weight": 0.17727272727272728,
+        "detail": {
+          "passed": 45,
+          "total": 46,
+          "survival_rate": 97.83,
+          "held_out_passed": 0,
+          "held_out_total": 0,
+          "verified": false
+        },
+        "notes": "45/46 edge cases survived"
+      },
+      "extension": {
+        "score": 0.0,
+        "weight": 0.1181818181818182,
+        "detail": {
+          "passed": 0,
+          "total": 16,
+          "phase": "static"
+        },
+        "notes": "0/16 extension tests passing"
+      },
+      "mutation": {
+        "score": 0.0,
+        "weight": 0.0,
+        "detail": {
+          "killed": 0,
+          "survived": 0,
+          "total": 0,
+          "method": "unavailable"
+        },
+        "notes": "No test files found in submission workspace."
+      },
+      "performance": {
+        "score": 100.0,
+        "weight": 0.15,
+        "detail": {
+          "get_10k_keys": {
+            "p50": 0.032,
+            "p95": 0.034,
+            "target_p95": 1.0,
+            "score": 100.0,
+            "skipped": false
+          },
+          "lrange_10k_list": {
+            "p50": 0.032,
+            "p95": 0.033,
+            "target_p95": 2.0,
+            "score": 100.0,
+            "skipped": false
+          },
+          "hgetall_1k_fields": {
+            "p50": 0.029,
+            "p95": 0.03,
+            "target_p95": 1.0,
+            "score": 100.0,
+            "skipped": false
+          }
+        },
+        "notes": ""
+      },
+      "reliability": {
+        "score": 100.0,
+        "weight": 0.1,
+        "detail": {
+          "passed": 8,
+          "total": 8
+        },
+        "notes": "8/8 reliability scenarios passing"
+      },
+      "quality": {
+        "score": 61.88,
+        "weight": 0.1,
+        "detail": {
+          "plumbing_porcelain_separation": {
+            "score": 88.7,
+            "reasoning": "RedisStore is cleanly separated from MiniRedisCLI with no printing inside the store layer. CLI is a thin dispatcher that handles formatting and I/O while delegating all logic to the store, making RedisStore independently testable."
+          },
+          "object_model_abstraction": {
+            "score": 54.0,
+            "reasoning": "Python native types are used correctly (dict for hash, list for list, set for set), but the internal representation uses a stringly-typed metadata wrapper {'type': 'string/list/hash/set', 'value': ...} rather than proper data classes or typed containers. The _get_value_and_check_type and _ensure_type_or_create helpers provide some abstraction but the schema is ad hoc."
+          },
+          "naming_consistency": {
+            "score": 87.7,
+            "reasoning": "Naming is highly consistent throughout \u2014 snake_case everywhere, handler methods follow handle_<command> pattern uniformly, store methods mirror Redis command names directly. The _format_* helper pattern is consistent across all output formatting."
+          },
+          "test_quality": {
+            "score": 0.0,
+            "reasoning": "No test file is present in the implementation provided. There are zero tests, assertions, or test infrastructure of any kind."
+          },
+          "scope_discipline": {
+            "score": 79.0,
+            "reasoning": "All standard Redis commands covered in the rubric appear implemented (strings, lists, hashes, sets, TTL, counters). Minor additions like atomic save with fsync and environment variable configuration go slightly beyond a minimal spec, but nothing egregious is added."
+          }
+        },
+        "notes": "LLM judge score (models: claude-sonnet-4-6...)"
+      }
+    },
+    "_scored": true
+  },
+  {
     "id": "mini-git-gemini-2-5-pro-20260311T111218Z",
     "harness": "mini-git",
     "harness_version": "1.0.0",
@@ -589,58 +1009,60 @@
     "_scored": true
   },
   {
-    "id": "mini-git-gemini-2-5-flash-20260310T144538Z",
-    "harness": "mini-git",
+    "id": "mini-sqlite-claude-opus-4-6-20260311T232737Z",
+    "harness": "mini-sqlite",
     "harness_version": "1.0.0",
-    "model": "gemini-2.5-flash",
-    "agent_framework": "gemini-api",
-    "quality_dry_run": true,
-    "date": "2026-03-10T14:45:38Z",
-    "wall_clock_seconds": 296.6,
-    "tokens_input": 1731,
-    "tokens_output": 59394,
-    "cost_usd": 0.0179,
-    "total_score": 7.34,
+    "model": "claude-opus-4-6",
+    "agent_framework": "claude-api",
+    "date": "2026-03-11T23:29:56.925237+00:00",
+    "wall_clock_seconds": 139.59,
+    "tokens_input": 1148,
+    "tokens_output": 13221,
+    "cost_usd": 1.0088,
+    "total_score": 74.31,
     "scores": {
       "functional": {
-        "score": 0.0,
-        "weight": 0.35,
+        "score": 88.95,
+        "weight": 0.35454545454545455,
         "detail": {
-          "total_passed": 0,
-          "total_tests": 72,
+          "total_passed": 56,
+          "total_tests": 65,
           "tiers": {
             "tier1": {
-              "passed": 0,
-              "total": 34,
-              "score": 0.0
+              "passed": 21,
+              "total": 21,
+              "score": 100.0
             },
             "tier2": {
-              "passed": 0,
-              "total": 22,
-              "score": 0.0
+              "passed": 22,
+              "total": 23,
+              "score": 95.65
             },
             "tier3": {
-              "passed": 0,
-              "total": 16,
-              "score": 0.0
+              "passed": 13,
+              "total": 21,
+              "score": 61.9
             }
           }
         },
-        "notes": "0/72 tests passing"
+        "notes": "56/65 tests passing"
       },
       "adversarial": {
-        "score": 0.65,
-        "weight": 0.2,
+        "score": 83.33,
+        "weight": 0.17727272727272728,
         "detail": {
-          "passed": 1,
-          "total": 155,
-          "survival_rate": 0.65
+          "passed": 25,
+          "total": 30,
+          "survival_rate": 83.33,
+          "held_out_passed": 0,
+          "held_out_total": 0,
+          "verified": false
         },
-        "notes": "1/155 edge cases survived"
+        "notes": "25/30 edge cases survived"
       },
       "extension": {
         "score": 0.0,
-        "weight": 0.1,
+        "weight": 0.1181818181818182,
         "detail": {
           "passed": 0,
           "total": 16,
@@ -657,78 +1079,351 @@
           "total": 0,
           "method": "unavailable"
         },
-        "notes": "Neither mutmut nor cosmic-ray found. Install one to enable mutation scoring."
+        "notes": "No test files found in submission workspace."
       },
       "performance": {
-        "score": 48.08,
+        "score": 100.0,
         "weight": 0.15,
         "detail": {
-          "log_10k_commits": {
-            "p50": 600,
-            "p95": 600,
+          "select_1k_rows": {
+            "p50": 0.035,
+            "p95": 0.037,
             "target_p95": 2.0,
-            "score": 0.0,
-            "skipped": true
-          },
-          "add_100k_files": {
-            "p50": 17.805,
-            "p95": 17.805,
-            "target_p95": 30.0,
             "score": 100.0,
             "skipped": false
           },
-          "diff_1k_changed_files": {
-            "p50": 1.346,
-            "p95": 1.346,
-            "target_p95": 1.0,
-            "score": 91.36,
+          "insert_100_rows": {
+            "p50": 3.293,
+            "p95": 3.591,
+            "target_p95": 5.0,
+            "score": 100.0,
             "skipped": false
           },
-          "merge_deep_diverge": {
-            "p50": 110.112,
-            "p95": 110.112,
-            "target_p95": 5.0,
-            "score": 0.0,
+          "join_1k_rows": {
+            "p50": 1.636,
+            "p95": 1.657,
+            "target_p95": 3.0,
+            "score": 100.0,
             "skipped": false
           }
         },
         "notes": ""
       },
       "reliability": {
-        "score": 0.0,
+        "score": 71.43,
         "weight": 0.1,
         "detail": {
-          "passed": 0,
-          "total": 14
+          "passed": 5,
+          "total": 7
         },
-        "notes": "0/14 reliability scenarios passing"
+        "notes": "5/7 reliability scenarios passing"
       },
       "quality": {
-        "score": 0.0,
+        "score": 58.6,
         "weight": 0.1,
         "detail": {
           "plumbing_porcelain_separation": {
-            "score": 0.0,
-            "reasoning": "[dry_run: LLM not called]"
+            "score": 78.7,
+            "reasoning": "The implementation has a clear three-layer architecture: StorageEngine handles persistence, Tokenizer/Parser produces ASTs, and Executor processes them. Each layer has well-defined interfaces, though the Executor directly calls storage.get_data() and storage.save() in-line throughout execution methods rather than using a cleaner transactional boundary."
           },
           "object_model_abstraction": {
-            "score": 0.0,
-            "reasoning": "[dry_run: LLM not called]"
+            "score": 70.7,
+            "reasoning": "The parser produces proper AST nodes as dicts with type tags, expressions are represented as trees (binop, comparison, is_null, etc.), and rows are stored as typed lists with coercion. The row representation using tuple keys (table_alias, col_name) for qualified access is clever, though the mix of dict-based AST nodes without proper classes is a minor weakness."
           },
           "naming_consistency": {
-            "score": 0.0,
-            "reasoning": "[dry_run: LLM not called]"
+            "score": 75.3,
+            "reasoning": "Naming is largely consistent throughout\u2014exec_* methods for execution, parse_* for parsing, eval_* for expression evaluation. The AST uses consistent 'type' discriminators. Minor inconsistency between column_ref nodes in expressions vs. column references in SELECT columns using slightly different structures."
           },
           "test_quality": {
             "score": 0.0,
-            "reasoning": "[dry_run: LLM not called]"
+            "reasoning": "No tests are present in the provided implementation. The file appears to be just the implementation with no test suite, test file, or even example usage shown."
           },
           "scope_discipline": {
-            "score": 0.0,
-            "reasoning": "[dry_run: LLM not called]"
+            "score": 68.3,
+            "reasoning": "The implementation covers SELECT with WHERE/JOIN/GROUP BY/ORDER BY/LIMIT, INSERT, UPDATE, DELETE, CREATE TABLE, DROP TABLE, transactions, and aggregate functions\u2014a comprehensive SQL subset. However, the code appears truncated (sort_key function is incomplete), and no sqlite3 import is used appropriately."
           }
         },
-        "notes": "dry_run=True: no LLM calls made. Run with dry_run=False for real scoring."
+        "notes": "LLM judge score (models: claude-sonnet-4-6...)"
+      }
+    },
+    "_scored": true
+  },
+  {
+    "id": "mini-sqlite-gpt-5.4-20260311T232738Z",
+    "harness": "mini-sqlite",
+    "harness_version": "1.0.0",
+    "model": "gpt-5.4",
+    "agent_framework": "openai-api",
+    "date": "2026-03-11T23:29:18.071937+00:00",
+    "wall_clock_seconds": 99.202,
+    "tokens_input": 1024,
+    "tokens_output": 9477,
+    "cost_usd": 0.1447,
+    "total_score": 69.76,
+    "scores": {
+      "functional": {
+        "score": 80.49,
+        "weight": 0.35454545454545455,
+        "detail": {
+          "total_passed": 50,
+          "total_tests": 65,
+          "tiers": {
+            "tier1": {
+              "passed": 21,
+              "total": 21,
+              "score": 100.0
+            },
+            "tier2": {
+              "passed": 18,
+              "total": 23,
+              "score": 78.26
+            },
+            "tier3": {
+              "passed": 11,
+              "total": 21,
+              "score": 52.38
+            }
+          }
+        },
+        "notes": "50/65 tests passing"
+      },
+      "adversarial": {
+        "score": 80.0,
+        "weight": 0.17727272727272728,
+        "detail": {
+          "passed": 24,
+          "total": 30,
+          "survival_rate": 80.0,
+          "held_out_passed": 0,
+          "held_out_total": 0,
+          "verified": false
+        },
+        "notes": "24/30 edge cases survived"
+      },
+      "extension": {
+        "score": 0.0,
+        "weight": 0.1181818181818182,
+        "detail": {
+          "passed": 0,
+          "total": 16,
+          "phase": "static"
+        },
+        "notes": "0/16 extension tests passing"
+      },
+      "mutation": {
+        "score": 0.0,
+        "weight": 0.0,
+        "detail": {
+          "killed": 0,
+          "survived": 0,
+          "total": 0,
+          "method": "unavailable"
+        },
+        "notes": "No test files found in submission workspace."
+      },
+      "performance": {
+        "score": 100.0,
+        "weight": 0.15,
+        "detail": {
+          "select_1k_rows": {
+            "p50": 0.046,
+            "p95": 0.047,
+            "target_p95": 2.0,
+            "score": 100.0,
+            "skipped": false
+          },
+          "insert_100_rows": {
+            "p50": 4.378,
+            "p95": 4.425,
+            "target_p95": 5.0,
+            "score": 100.0,
+            "skipped": false
+          },
+          "join_1k_rows": {
+            "p50": 1.555,
+            "p95": 1.568,
+            "target_p95": 3.0,
+            "score": 100.0,
+            "skipped": false
+          }
+        },
+        "notes": ""
+      },
+      "reliability": {
+        "score": 71.43,
+        "weight": 0.1,
+        "detail": {
+          "passed": 5,
+          "total": 7
+        },
+        "notes": "5/7 reliability scenarios passing"
+      },
+      "quality": {
+        "score": 49.0,
+        "weight": 0.1,
+        "detail": {
+          "plumbing_porcelain_separation": {
+            "score": 53.3,
+            "reasoning": "The implementation has a clean layered architecture: Lexer \u2192 Parser \u2192 AST \u2192 Executor \u2192 Database \u2192 StorageEngine, with each layer having clear responsibilities. Minor tangling exists in the Executor which handles both logic and some data access, but overall the pipeline is well-separated."
+          },
+          "object_model_abstraction": {
+            "score": 50.0,
+            "reasoning": "Strong AST with proper dataclasses for all node types (BinaryOp, UnaryOp, IsNullOp, AggregateExpr, etc.), typed row storage with schema enforcement, and proper expression tree evaluation. The implementation is cut off at eval_expr (uses expr.val instead of expr.value), suggesting the file is incomplete, limiting full assessment."
+          },
+          "naming_consistency": {
+            "score": 80.0,
+            "reasoning": "Naming is highly consistent throughout: dataclasses use PascalCase, methods use snake_case, constants use UPPER_CASE, and similar operations (parse_X, expect_X, match_X) share structural patterns. The Stmt suffix for AST nodes and Spec suffix for JoinSpec are applied consistently."
+          },
+          "test_quality": {
+            "score": 0.0,
+            "reasoning": "No test code is present in the implementation \u2014 the file contains only the implementation itself with no test suite, test functions, or assertions visible."
+          },
+          "scope_discipline": {
+            "score": 61.7,
+            "reasoning": "The implementation covers CREATE TABLE, DROP TABLE, INSERT, SELECT (with JOINs, GROUP BY, HAVING, ORDER BY, LIMIT/OFFSET, aggregates), DELETE, UPDATE, and transactions (BEGIN/COMMIT/ROLLBACK). However, the code appears truncated mid-function (eval_expr is incomplete, referencing expr.val instead of expr.value), meaning SELECT and other query execution likely doesn't fully work. No sqlite3 import is used."
+          }
+        },
+        "notes": "LLM judge score (models: claude-sonnet-4-6...)"
+      }
+    },
+    "_scored": true
+  },
+  {
+    "id": "mini-sqlite-gemini-2.5-pro-20260311T232738Z",
+    "harness": "mini-sqlite",
+    "harness_version": "1.0.0",
+    "model": "gemini-2.5-pro",
+    "agent_framework": "gemini-api",
+    "date": "2026-03-11T23:30:24.971568+00:00",
+    "wall_clock_seconds": 166.748,
+    "tokens_input": 1072,
+    "tokens_output": 11366,
+    "cost_usd": 0.115,
+    "total_score": 68.17,
+    "scores": {
+      "functional": {
+        "score": 75.72,
+        "weight": 0.35454545454545455,
+        "detail": {
+          "total_passed": 46,
+          "total_tests": 65,
+          "tiers": {
+            "tier1": {
+              "passed": 21,
+              "total": 21,
+              "score": 100.0
+            },
+            "tier2": {
+              "passed": 18,
+              "total": 23,
+              "score": 78.26
+            },
+            "tier3": {
+              "passed": 7,
+              "total": 21,
+              "score": 33.33
+            }
+          }
+        },
+        "notes": "46/65 tests passing"
+      },
+      "adversarial": {
+        "score": 70.0,
+        "weight": 0.17727272727272728,
+        "detail": {
+          "passed": 21,
+          "total": 30,
+          "survival_rate": 70.0,
+          "held_out_passed": 0,
+          "held_out_total": 0,
+          "verified": false
+        },
+        "notes": "21/30 edge cases survived"
+      },
+      "extension": {
+        "score": 0.0,
+        "weight": 0.1181818181818182,
+        "detail": {
+          "passed": 0,
+          "total": 16,
+          "phase": "static"
+        },
+        "notes": "0/16 extension tests passing"
+      },
+      "mutation": {
+        "score": 0.0,
+        "weight": 0.0,
+        "detail": {
+          "killed": 0,
+          "survived": 0,
+          "total": 0,
+          "method": "unavailable"
+        },
+        "notes": "No test files found in submission workspace."
+      },
+      "performance": {
+        "score": 100.0,
+        "weight": 0.15,
+        "detail": {
+          "select_1k_rows": {
+            "p50": 0.036,
+            "p95": 0.038,
+            "target_p95": 2.0,
+            "score": 100.0,
+            "skipped": false
+          },
+          "insert_100_rows": {
+            "p50": 3.525,
+            "p95": 3.76,
+            "target_p95": 5.0,
+            "score": 100.0,
+            "skipped": false
+          },
+          "join_1k_rows": {
+            "p50": 0.033,
+            "p95": 0.036,
+            "target_p95": 3.0,
+            "score": 100.0,
+            "skipped": false
+          }
+        },
+        "notes": ""
+      },
+      "reliability": {
+        "score": 85.71,
+        "weight": 0.1,
+        "detail": {
+          "passed": 6,
+          "total": 7
+        },
+        "notes": "6/7 reliability scenarios passing"
+      },
+      "quality": {
+        "score": 53.48,
+        "weight": 0.1,
+        "detail": {
+          "plumbing_porcelain_separation": {
+            "score": 57.7,
+            "reasoning": "Clear layered architecture with Tokenizer \u2192 Parser \u2192 ExecutionEngine \u2192 StorageEngine pipeline, each independently defined. Minor tangling exists where ExecutionEngine reads schema details to construct contexts, but overall the separation is exemplary."
+          },
+          "object_model_abstraction": {
+            "score": 56.7,
+            "reasoning": "Full AST with named namedtuples for every statement and expression type, typed literals, proper expression trees with BinOp/UnaryOp/IsNullExpr, and a clean row model as typed lists with schema metadata. Storage is swappable via the StorageEngine abstraction."
+          },
+          "naming_consistency": {
+            "score": 84.0,
+            "reasoning": "Extremely consistent naming throughout: parse_* methods in Parser, _execute_* dispatch in ExecutionEngine, _op closures in StorageEngine. AST node names match their SQL counterparts cleanly."
+          },
+          "test_quality": {
+            "score": 0.0,
+            "reasoning": "No tests are present in the provided implementation \u2014 the file contains only the implementation code with no test suite, assertions, or test infrastructure whatsoever."
+          },
+          "scope_discipline": {
+            "score": 69.0,
+            "reasoning": "The implementation covers a broad and impressive scope (CREATE, DROP, INSERT, SELECT with JOINs/GROUP BY/HAVING/ORDER BY/LIMIT/OFFSET, UPDATE, DELETE, transactions, NULL handling) with no sqlite3 import, but the file is truncated mid-implementation (LEFT JOIN logic cuts off), making it impossible to confirm full feature completeness."
+          }
+        },
+        "notes": "LLM judge score (models: claude-sonnet-4-6...)"
       }
     },
     "_scored": true
